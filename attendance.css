@@ -57,7 +57,7 @@ button {
 }
 
 .time-card {
-  background: linear-gradient(180deg, #fcfcfc 0%, #f7f7f7 100%);
+  background: #fbfbfb;
   border-radius: 26px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
   padding: 28px 16px 18px;
@@ -71,9 +71,9 @@ button {
   gap: 12px;
 }
 
-.header-clock-icon {
-  width: 29px;
-  height: 29px;
+.time-card-header .material-symbols-outlined {
+  font-size: 29px;
+  line-height: 1;
   color: #1d1d1d;
   flex-shrink: 0;
 }
@@ -381,7 +381,7 @@ button {
 
 .nav-btn-center {
   margin-top: -30px;
-  background: linear-gradient(135deg, #0b3188, #1a56d6);
+  background: #0b3188;
   color: #ffffff;
   border-radius: 999px;
   width: 88px;
@@ -625,9 +625,8 @@ button {
     font-size: 18px;
   }
 
-  .header-clock-icon {
-    width: 27px;
-    height: 27px;
+  .time-card-header .material-symbols-outlined {
+    font-size: 27px;
   }
 
   .current-time {
