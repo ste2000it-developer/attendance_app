@@ -3,43 +3,29 @@
 <head>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
   <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
   <title>Attendance</title>
 
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0b3188">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="STE2000 Attendance">
 
   <link rel="stylesheet" href="attendance.css">
 </head>
+
 <body>
   <div class="attendance-app">
     <main class="main-content">
+
+      <!-- HOME -->
       <section id="homeSection" class="page-section active">
         <div class="home-shell">
+
           <section class="time-card">
             <div class="time-card-header">
-              <svg
-                class="header-clock-icon"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.1"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="9"></circle>
-                <path d="M12 7v5l3 2"></path>
-              </svg>
+              <span class="material-symbols-outlined">schedule</span>
               <p class="time-card-title">เวลาปัจจุบัน</p>
             </div>
 
@@ -63,19 +49,7 @@
           </section>
 
           <div class="location-row">
-            <svg
-              class="map-pin-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"
-                fill="#d80000"
-              ></path>
-              <circle cx="12" cy="10" r="2.7" fill="#ffffff"></circle>
-            </svg>
-
+            <span class="material-symbols-outlined">location_on</span>
             <p class="location-text">
               <span class="location-label">สถานที่:</span>
               <span id="siteDisplay" class="location-value">กำลังตรวจตำแหน่ง...</span>
@@ -90,9 +64,11 @@
             <p id="statusText">ยังไม่ได้เข้างาน</p>
             <p id="subStatusText">พร้อมเริ่มงาน</p>
           </div>
+
         </div>
       </section>
 
+      <!-- PROFILE -->
       <section id="profileSection" class="page-section">
         <div class="employee-card">
           <div class="employee-card-top">
@@ -102,12 +78,12 @@
 
           <div class="employee-card-body">
             <div class="profile-line">
-              <span class="profile-label">ชื่อผู้ใช้</span>
+              <span class="profile-label">Email</span>
               <span id="profileEmail" class="profile-value">-</span>
             </div>
 
             <div class="profile-line">
-              <span class="profile-label">รหัสผู้ใช้</span>
+              <span class="profile-label">UID</span>
               <span id="profileUid" class="profile-value">-</span>
             </div>
           </div>
@@ -118,34 +94,39 @@
         </div>
       </section>
 
+      <!-- LEAVE -->
       <section id="leaveSection" class="page-section">
         <div class="coming-soon-card">
           <h2>หน้าลางาน</h2>
-          <p>
-            หน้านี้จะทำต่อในขั้นถัดไป
-            รอบนี้ยังไม่ได้ใส่ logic การส่งลา, แนบใบแพทย์,
-            ประวัติลา และวันหยุดบริษัท
-          </p>
+          <p>กำลังพัฒนา...</p>
         </div>
       </section>
+
     </main>
 
-    <div class="bottom-nav">
-  <div class="nav-item active">
-    <span class="material-symbols-outlined">home</span>
-    <div>หน้าหลัก</div>
+    <!-- 🔥 FIXED NAV -->
+    <nav class="bottom-nav">
+
+      <button id="homeTabBtn" class="nav-btn active">
+        <span class="nav-icon material-symbols-outlined">home</span>
+        <span class="nav-text">หน้าหลัก</span>
+      </button>
+
+      <button id="profileTabBtn" class="nav-btn nav-btn-center">
+        <span class="nav-icon material-symbols-outlined">person</span>
+        <span class="nav-text">โปรไฟล์</span>
+      </button>
+
+      <button id="leaveTabBtn" class="nav-btn">
+        <span class="nav-icon material-symbols-outlined">description</span>
+        <span class="nav-text">ลา</span>
+      </button>
+
+    </nav>
+
   </div>
 
-  <div class="nav-item center">
-    <span class="material-symbols-outlined">person</span>
-  </div>
-
-  <div class="nav-item">
-    <span class="material-symbols-outlined">description</span>
-    <div>ใบลา</div>
-  </div>
-</div>
-
+  <!-- LOADING -->
   <div id="appLoadingOverlay" class="app-loading-overlay">
     <div class="app-loading-card">
       <div class="app-loading-spinner"></div>
@@ -154,6 +135,7 @@
     </div>
   </div>
 
+  <!-- POPUP -->
   <div id="popupOverlay" class="popup-overlay hidden">
     <div class="popup-card">
       <p id="popupTitle" class="popup-title">สำเร็จ</p>
@@ -167,12 +149,6 @@
   </div>
 
   <script type="module" src="attendance.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js");
-      });
-    }
-  </script>
+
 </body>
 </html>
