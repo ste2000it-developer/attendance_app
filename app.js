@@ -17,7 +17,15 @@ const emailGroup = document.getElementById("emailGroup");
 const passwordGroup = document.getElementById("passwordGroup");
 
 let isPasswordVisible = false;
-let authChecked = false;
+
+// 🔥 เช็ค session ก่อนโชว์หน้า
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.location.replace("./attendance.html");
+  } else {
+    document.body.style.display = "block";
+  }
+});
 
 function updateFloatingState(inputElement, groupElement) {
   const hasValue = inputElement.value.trim() !== "";
@@ -92,18 +100,6 @@ togglePasswordBtn.addEventListener("click", () => {
   updateFloatingState(passwordInput, passwordGroup);
 });
 
-onAuthStateChanged(auth, (user) => {
-  if (!authChecked) {
-    authChecked = true;
-  }
-
-   if (user) {
-    window.location.replace("./attendance.html");
-  } else {
-    document.body.style.display = "block";
-  }
-});
-
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -111,12 +107,9 @@ loginForm.addEventListener("submit", async (event) => {
   const password = passwordInput.value;
 
   loginMessage.textContent = "";
-  loginMessage.style.color = "#d12c2c";
 
   if (!email || !password) {
     showError("กรุณากรอกอีเมลและรหัสผ่าน");
-    updateFloatingState(emailInput, emailGroup);
-    updateFloatingState(passwordInput, passwordGroup);
     return;
   }
 
@@ -125,8 +118,7 @@ loginForm.addEventListener("submit", async (event) => {
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    showSuccess("เข้าสู่ระบบสำเร็จ");
-    window.location.href = "./attendance.html";
+    window.location.replace("./attendance.html"); // 🔥 แก้ตรงนี้
   } catch (error) {
     showError(getFriendlyFirebaseError(error.code));
   } finally {
