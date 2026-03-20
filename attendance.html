@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="attendance.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
 </head>
 <body>
   <div class="attendance-app">
@@ -121,23 +122,23 @@
       </section>
     </main>
 
-    <nav class="bottom-nav">
-      <button id="homeTabBtn" class="nav-btn active">
-        <span class="nav-icon">⌂</span>
-        <span class="nav-text">Home</span>
-      </button>
+<div class="bottom-nav">
 
-      <button id="profileTabBtn" class="nav-btn nav-btn-center">
-        <span class="nav-icon">👤</span>
-        <span class="nav-text">Profile</span>
-      </button>
+  <button id="homeTabBtn" class="nav-item active">
+    <span class="material-symbols-rounded">home</span>
+    <span class="nav-label">Home</span>
+  </button>
 
-      <button id="leaveTabBtn" class="nav-btn">
-        <span class="nav-icon">📝</span>
-        <span class="nav-text">Leave</span>
-      </button>
-    </nav>
-  </div>
+  <button id="profileTabBtn" class="nav-center">
+    <span class="material-symbols-rounded">person</span>
+  </button>
+
+  <button id="leaveTabBtn" class="nav-item">
+    <span class="material-symbols-rounded">edit_note</span>
+    <span class="nav-label">Leave</span>
+  </button>
+
+</div>
 
   <!-- APP ENTRY LOADING -->
   <div id="appLoadingOverlay" class="app-loading-overlay">
