@@ -144,6 +144,13 @@ function getNoonMoment(date) {
   return noon;
 }
 
+function isAfterCountdownStart(date) {
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+
+  return hour > 6 || (hour === 6 && minute >= 1);
+}
+
 function formatTime(date) {
   return date.toLocaleTimeString("th-TH", {
     hour: "2-digit",
@@ -154,7 +161,8 @@ function formatTime(date) {
 function formatCurrentTime(date) {
   return date.toLocaleTimeString("th-TH", {
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    second: "2-digit"
   });
 }
 
@@ -280,6 +288,7 @@ function updateAttendanceUI() {
 
   const now = getNow();
   const noon = getNoonMoment(now);
+  const canRunCountdown = isAfterCountdownStart(now);
 
   checkInDisplayEl.textContent = currentRecord.checkInLabel || "--:--";
   checkOutDisplayEl.textContent = currentRecord.checkOutLabel || "--:--";
@@ -302,7 +311,7 @@ function updateAttendanceUI() {
   }
 
   if (!currentRecord.checkOutTime) {
-    if (now < noon) {
+    if (canRunCountdown && now < noon) {
       statusTextEl.textContent = "เข้างานแล้ว";
       subStatusTextEl.textContent = "รอถึง 12:00 เพื่อเลิกงาน";
       setButtonState("state-countdown", buildCountdownButtonText(now, noon), true);
@@ -807,8 +816,9 @@ function handleMainAction() {
   if (currentRecord.checkInTime && !currentRecord.checkOutTime) {
     const now = getNow();
     const noon = getNoonMoment(now);
+    const canRunCountdown = isAfterCountdownStart(now);
 
-    if (now >= noon) {
+    if (!canRunCountdown || now >= noon) {
       handleCheckOut();
     }
   }
@@ -916,7 +926,7 @@ onAuthStateChanged(auth, async (user) => {
     pageTimer = setInterval(() => {
       updateClockUI();
       updateAttendanceUI();
-    }, 30000);
+    }, 1000);
 
     await sleep(250);
     hideAppLoading();
