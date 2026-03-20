@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -19,17 +19,15 @@
   <div class="attendance-app">
     <main class="main-content">
 
-      <!-- HOME -->
       <section id="homeSection" class="page-section active">
         <div class="home-shell">
-
           <section class="time-card">
             <div class="time-card-header">
               <span class="material-symbols-outlined">schedule</span>
               <p class="time-card-title">เวลาปัจจุบัน</p>
             </div>
 
-            <p id="currentTime" class="current-time">--:--</p>
+            <p id="currentTime" class="current-time">--:--:--</p>
 
             <div class="divider"></div>
 
@@ -49,7 +47,19 @@
           </section>
 
           <div class="location-row">
-            <span class="material-symbols-outlined">location_on</span>
+            <svg
+              class="map-pin-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"
+                fill="#d80000"
+              ></path>
+              <circle cx="12" cy="10" r="2.7" fill="#ffffff"></circle>
+            </svg>
+
             <p class="location-text">
               <span class="location-label">สถานที่:</span>
               <span id="siteDisplay" class="location-value">กำลังตรวจตำแหน่ง...</span>
@@ -64,11 +74,9 @@
             <p id="statusText">ยังไม่ได้เข้างาน</p>
             <p id="subStatusText">พร้อมเริ่มงาน</p>
           </div>
-
         </div>
       </section>
 
-      <!-- PROFILE -->
       <section id="profileSection" class="page-section">
         <div class="employee-card">
           <div class="employee-card-top">
@@ -94,7 +102,6 @@
         </div>
       </section>
 
-      <!-- LEAVE -->
       <section id="leaveSection" class="page-section">
         <div class="coming-soon-card">
           <h2>หน้าลางาน</h2>
@@ -104,29 +111,24 @@
 
     </main>
 
-    <!-- 🔥 FIXED NAV -->
     <nav class="bottom-nav">
-
-      <button id="homeTabBtn" class="nav-btn active">
+      <button id="homeTabBtn" class="nav-btn active" type="button">
         <span class="nav-icon material-symbols-outlined">home</span>
         <span class="nav-text">หน้าหลัก</span>
       </button>
 
-      <button id="profileTabBtn" class="nav-btn nav-btn-center">
+      <button id="profileTabBtn" class="nav-btn nav-btn-center" type="button">
         <span class="nav-icon material-symbols-outlined">person</span>
         <span class="nav-text">โปรไฟล์</span>
       </button>
 
-      <button id="leaveTabBtn" class="nav-btn">
+      <button id="leaveTabBtn" class="nav-btn" type="button">
         <span class="nav-icon material-symbols-outlined">description</span>
         <span class="nav-text">ใบลา</span>
       </button>
-
     </nav>
-
   </div>
 
-  <!-- LOADING -->
   <div id="appLoadingOverlay" class="app-loading-overlay">
     <div class="app-loading-card">
       <div class="app-loading-spinner"></div>
@@ -135,7 +137,6 @@
     </div>
   </div>
 
-  <!-- POPUP -->
   <div id="popupOverlay" class="popup-overlay hidden">
     <div class="popup-card">
       <p id="popupTitle" class="popup-title">สำเร็จ</p>
@@ -149,6 +150,5 @@
   </div>
 
   <script type="module" src="attendance.js"></script>
-
 </body>
 </html>
