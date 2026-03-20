@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
 
 * {
   box-sizing: border-box;
@@ -31,7 +31,7 @@ button {
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding: 52px 22px 120px;
+  padding: 52px 22px 128px;
 }
 
 .page-section {
@@ -43,7 +43,7 @@ button {
 }
 
 #homeSection.active {
-  min-height: calc(100vh - 172px);
+  min-height: calc(100vh - 180px);
   display: flex;
   align-items: center;
 }
@@ -57,10 +57,11 @@ button {
 }
 
 .time-card {
-  background: #fbfbfb;
+  background: linear-gradient(180deg, #fcfcfc 0%, #f7f7f7 100%);
   border-radius: 26px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
   padding: 28px 16px 18px;
+  border: 1px solid rgba(11, 49, 136, 0.04);
 }
 
 .time-card-header {
@@ -87,12 +88,13 @@ button {
 .current-time {
   margin: 28px 0 0;
   text-align: center;
-  font-family: 'Lexend Mega', sans-serif;
+  font-family: 'Lexend Giga', sans-serif;
   font-size: 49px;
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -1.8px;
   color: #0b3188;
+  font-variant-numeric: tabular-nums;
 }
 
 .divider {
@@ -183,7 +185,7 @@ button {
   color: #ffffff;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
 .main-action-btn:active {
@@ -338,15 +340,18 @@ button {
   bottom: 0;
   max-width: 430px;
   margin: 0 auto;
-  background: #ffffff;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
-  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.10);
-  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.10);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  border-top: 1px solid rgba(11, 49, 136, 0.06);
 }
 
 .nav-btn {
@@ -358,39 +363,73 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
-  padding: 6px 4px;
+  padding: 8px 4px 6px;
+  border-radius: 18px;
+  transition: transform 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.nav-btn:active {
+  transform: scale(0.98);
 }
 
 .nav-btn.active {
   color: #0b3188;
+  background: rgba(11, 49, 136, 0.06);
 }
 
 .nav-btn-center {
-  margin-top: -28px;
-  background: #0b3188;
+  margin-top: -30px;
+  background: linear-gradient(135deg, #0b3188, #1a56d6);
   color: #ffffff;
   border-radius: 999px;
   width: 88px;
   max-width: 88px;
   height: 88px;
   flex: 0 0 88px;
-  box-shadow: 0 10px 24px rgba(11, 49, 136, 0.28);
+  box-shadow: 0 14px 28px rgba(11, 49, 136, 0.28);
+  border: 6px solid #efefef;
 }
 
 .nav-btn-center.active {
   color: #ffffff;
+  background: linear-gradient(135deg, #0b3188, #1a56d6);
+}
+
+.nav-btn-center .nav-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.nav-btn-center .nav-icon {
+  font-size: 30px;
 }
 
 .nav-icon {
-  font-size: 22px;
+  font-family: 'Material Symbols Outlined';
+  font-size: 24px;
   line-height: 1;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 .nav-text {
   font-size: 13px;
   font-weight: 400;
+  line-height: 1;
 }
 
 /* APP ENTRY LOADING */
@@ -565,11 +604,11 @@ button {
 @media (max-width: 420px) {
   .main-content {
     max-width: 390px;
-    padding: 48px 14px 118px;
+    padding: 48px 14px 124px;
   }
 
   #homeSection.active {
-    min-height: calc(100vh - 166px);
+    min-height: calc(100vh - 172px);
   }
 
   .home-shell {
@@ -630,9 +669,11 @@ button {
     height: 82px;
     flex: 0 0 82px;
   }
-  html, body {
-  overflow: hidden;
-  height: 100%;
-  touch-action: manipulation;
-}
+
+  html,
+  body {
+    overflow: hidden;
+    height: 100%;
+    touch-action: manipulation;
+  }
 }
