@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STE2000 Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <body style="display: none;"></body>
+  <div class="page login-page">
+    <div class="login-card">
+      <div class="brand-block">
+        <h1 class="brand-title-en">S.TUNTIVIVAT</h1>
+        <h2 class="brand-title-en-sub">ENGINEERING 2000</h2>
+        <p class="brand-subtitle">Work Force Management</p>
+      </div>
+
+      <form id="loginForm" class="login-form" novalidate>
+        <div class="input-group floating-group" id="emailGroup">
+          <div class="input-wrap">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              class="text-input"
+              autocomplete="email"
+              placeholder="Email"
+            >
+            <label for="email" class="floating-label">Email</label>
+          </div>
+        </div>
+
+        <div class="input-group floating-group" id="passwordGroup">
+          <div class="input-wrap password-wrap">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              class="text-input password-input"
+              autocomplete="current-password"
+              placeholder="Password"
+            >
+            <label for="password" class="floating-label">Password</label>
+
+            <button
+              type="button"
+              id="togglePasswordBtn"
+              class="toggle-password-btn"
+              aria-label="แสดงหรือซ่อนรหัสผ่าน"
+            >
+              <svg
+                id="eyeOpenIcon"
+                class="eye-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+
+              <svg
+                id="eyeOffIcon"
+                class="eye-icon hidden"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 3l18 18"></path>
+                <path d="M10.6 10.7a3 3 0 0 0 4.2 4.2"></path>
+                <path d="M9.9 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a16.4 16.4 0 0 1-4 4.9"></path>
+                <path d="M6.6 6.7C4 8.5 2 12 2 12a16.9 16.9 0 0 0 10 7 11.6 11.6 0 0 0 5-1.1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <p id="loginMessage" class="login-message"></p>
+
+        <button type="submit" id="loginBtn" class="login-btn">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+    </div>
+
+    <p class="version-text">Version 1.0.0</p>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
