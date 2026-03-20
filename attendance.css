@@ -394,7 +394,7 @@ button {
 
 .nav-btn-center.active {
   color: #ffffff;
-  background: linear-gradient(135deg, #0b3188, #1a56d6);
+  background: #0b3188;
 }
 
 .nav-btn-center .nav-text {
