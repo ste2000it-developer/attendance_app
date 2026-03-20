@@ -57,6 +57,8 @@ let cachedSites = [];
 let sitesLoaded = false;
 let isActionRunning = false;
 let isAppReady = false;
+let isAutoCheckoutRunning = false;
+let isWorkdaySyncRunning = false;
 
 let locationLoadingInterval = null;
 
@@ -147,7 +149,6 @@ function getNoonMoment(date) {
 function isAfterCountdownStart(date) {
   const hour = date.getHours();
   const minute = date.getMinutes();
-
   return hour > 6 || (hour === 6 && minute >= 1);
 }
 
@@ -281,6 +282,38 @@ function normalizeLiveSiteName() {
   updateLiveSiteDisplay();
 }
 
+function getWorkdayDateFromKey(workdayKey) {
+  const [year, month, day] = workdayKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getAutoCheckoutThreshold(workdayKey) {
+  const workdayDate = getWorkdayDateFromKey(workdayKey);
+  const threshold = new Date(workdayDate);
+  threshold.setDate(threshold.getDate() + 1);
+  threshold.setHours(6, 1, 0, 0);
+  return threshold;
+}
+
+function getAutoCheckoutMoment(workdayKey) {
+  const workdayDate = getWorkdayDateFromKey(workdayKey);
+  const autoCheckout = new Date(workdayDate);
+  autoCheckout.setHours(23, 59, 0, 0);
+  return autoCheckout;
+}
+
+function shouldAutoCheckoutRecord(record, now) {
+  if (!record || !record.workdayKey) {
+    return false;
+  }
+
+  if (!record.checkInTime || record.checkOutTime) {
+    return false;
+  }
+
+  return now >= getAutoCheckoutThreshold(record.workdayKey);
+}
+
 function updateAttendanceUI() {
   if (!currentRecord) {
     setEmptyRecord(getWorkdayKey(getNow()));
@@ -299,7 +332,7 @@ function updateAttendanceUI() {
     return;
   }
 
-  if (isActionRunning) {
+  if (isActionRunning || isAutoCheckoutRunning) {
     return;
   }
 
@@ -467,6 +500,20 @@ async function loadAttendanceRecord() {
   };
 }
 
+async function loadAttendanceRecordByKey(workdayKey) {
+  const dayRef = getAttendanceDayRef(currentEmployeeCode, workdayKey);
+  const daySnap = await getDoc(dayRef);
+
+  if (!daySnap.exists()) {
+    return null;
+  }
+
+  return {
+    workdayKey,
+    ...daySnap.data()
+  };
+}
+
 async function saveAttendanceRecord(data) {
   const workdayKey = getWorkdayKey(getNow());
   const dayRef = getAttendanceDayRef(currentEmployeeCode, workdayKey);
@@ -481,6 +528,19 @@ async function saveAttendanceRecord(data) {
   );
 
   await loadAttendanceRecord();
+}
+
+async function saveAttendanceRecordByKey(workdayKey, data) {
+  const dayRef = getAttendanceDayRef(currentEmployeeCode, workdayKey);
+
+  await setDoc(
+    dayRef,
+    {
+      ...data,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
 }
 
 function getCurrentLocationOnce() {
@@ -634,7 +694,7 @@ async function ensureUsableLiveLocation() {
 }
 
 async function handleCheckIn() {
-  if (isActionRunning || !isAppReady) {
+  if (isActionRunning || !isAppReady || isAutoCheckoutRunning) {
     return;
   }
 
@@ -718,7 +778,7 @@ async function handleCheckIn() {
 }
 
 async function confirmCheckOut() {
-  if (isActionRunning || !isAppReady) {
+  if (isActionRunning || !isAppReady || isAutoCheckoutRunning) {
     return;
   }
 
@@ -785,7 +845,7 @@ async function confirmCheckOut() {
 }
 
 function handleCheckOut() {
-  if (isActionRunning || !isAppReady) {
+  if (isActionRunning || !isAppReady || isAutoCheckoutRunning) {
     return;
   }
 
@@ -804,7 +864,7 @@ function handleCheckOut() {
 }
 
 function handleMainAction() {
-  if (isActionRunning || !isAppReady) {
+  if (isActionRunning || !isAppReady || isAutoCheckoutRunning) {
     return;
   }
 
@@ -840,7 +900,7 @@ function setActiveSection(sectionName) {
   if (sectionName === "home") {
     homeSection.classList.add("active");
     homeTabBtn.classList.add("active");
-    normalizeLiveSiteName();
+    normalizeLiveSiteDisplaySafe();
   }
 
   if (sectionName === "profile") {
@@ -854,9 +914,127 @@ function setActiveSection(sectionName) {
   }
 }
 
+function normalizeLiveSiteDisplaySafe() {
+  normalizeLiveSiteName();
+}
+
 function updateProfile(user) {
   profileEmailEl.textContent = user?.email || "-";
   profileUidEl.textContent = user?.uid || "-";
+}
+
+async function autoCheckoutRecord(record) {
+  const autoCheckoutMoment = getAutoCheckoutMoment(record.workdayKey);
+  const checkInDate = new Date(record.checkInTime);
+  const checkedInBeforeNoon = checkInDate.getHours() < 12;
+
+  let checkOutLabel = formatTime(autoCheckoutMoment);
+  let checkOutType = "auto";
+  let checkOutStatus = getCheckoutStatus(autoCheckoutMoment);
+
+  if (checkedInBeforeNoon && autoCheckoutMoment.getHours() === 12) {
+    checkOutLabel = "ลา";
+    checkOutType = "half-day-afternoon-leave-auto";
+  }
+
+  await saveAttendanceRecordByKey(record.workdayKey, {
+    checkOutTime: autoCheckoutMoment.toISOString(),
+    checkOutLabel,
+    checkOutType,
+    checkOutStatus,
+    siteOut: record.siteOut || "ระบบอัตโนมัติ",
+    locationOut: record.locationOut || null,
+    checkoutOutside: !!record.checkoutOutside,
+    autoCheckedOut: true
+  });
+}
+
+async function processAutoCheckoutIfNeeded() {
+  if (
+    isAutoCheckoutRunning ||
+    isActionRunning ||
+    !currentEmployeeCode ||
+    !currentRecord
+  ) {
+    return;
+  }
+
+  const now = getNow();
+
+  if (!shouldAutoCheckoutRecord(currentRecord, now)) {
+    return;
+  }
+
+  try {
+    isAutoCheckoutRunning = true;
+    updateAttendanceUI();
+
+    await autoCheckoutRecord(currentRecord);
+    await loadAttendanceRecord();
+    updateAttendanceUI();
+  } catch (error) {
+    console.error("AUTO_CHECKOUT_FAILED", error);
+  } finally {
+    isAutoCheckoutRunning = false;
+    updateAttendanceUI();
+  }
+}
+
+async function processPreviousWorkdayAutoCheckoutIfNeeded() {
+  if (!currentEmployeeCode) {
+    return;
+  }
+
+  const now = getNow();
+
+  if (!isAfterCountdownStart(now)) {
+    return;
+  }
+
+  const previousDate = new Date(now);
+  previousDate.setDate(previousDate.getDate() - 1);
+  const previousWorkdayKey = (() => {
+    const year = previousDate.getFullYear();
+    const month = String(previousDate.getMonth() + 1).padStart(2, "0");
+    const day = String(previousDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  })();
+
+  const previousRecord = await loadAttendanceRecordByKey(previousWorkdayKey);
+
+  if (!shouldAutoCheckoutRecord(previousRecord, now)) {
+    return;
+  }
+
+  await autoCheckoutRecord(previousRecord);
+}
+
+async function syncWorkdayRecordIfNeeded() {
+  if (
+    isWorkdaySyncRunning ||
+    isActionRunning ||
+    isAutoCheckoutRunning ||
+    !currentEmployeeCode ||
+    !currentRecord
+  ) {
+    return;
+  }
+
+  const nowWorkdayKey = getWorkdayKey(getNow());
+
+  if (currentRecord.workdayKey === nowWorkdayKey) {
+    return;
+  }
+
+  try {
+    isWorkdaySyncRunning = true;
+    await loadAttendanceRecord();
+    updateAttendanceUI();
+  } catch (error) {
+    console.error("SYNC_WORKDAY_FAILED", error);
+  } finally {
+    isWorkdaySyncRunning = false;
+  }
 }
 
 homeTabBtn.addEventListener("click", () => {
@@ -874,7 +1052,7 @@ leaveTabBtn.addEventListener("click", () => {
 mainActionBtn.addEventListener("click", handleMainAction);
 
 popupOverlay.addEventListener("click", (event) => {
-  if (event.target === popupOverlay && !isActionRunning) {
+  if (event.target === popupOverlay && !isActionRunning && !isAutoCheckoutRunning) {
     hidePopup();
   }
 });
@@ -907,6 +1085,11 @@ onAuthStateChanged(auth, async (user) => {
 
     setAppLoading("กำลังเตรียมข้อมูลการตอกบัตร...");
     await ensureAttendanceRootDoc();
+
+    setAppLoading("กำลังตรวจสอบการตัดเวลาอัตโนมัติ...");
+    await processPreviousWorkdayAutoCheckoutIfNeeded();
+
+    setAppLoading("กำลังโหลดข้อมูลการตอกบัตร...");
     await loadAttendanceRecord();
 
     setAppLoading("กำลังโหลดจุดสถานที่...");
@@ -926,6 +1109,8 @@ onAuthStateChanged(auth, async (user) => {
     pageTimer = setInterval(() => {
       updateClockUI();
       updateAttendanceUI();
+      void processAutoCheckoutIfNeeded();
+      void syncWorkdayRecordIfNeeded();
     }, 1000);
 
     await sleep(250);
