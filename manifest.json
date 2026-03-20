@@ -1,170 +1,62 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-  >
-  <title>Attendance</title>
+const CACHE_NAME = "ste2000-attendance-v1";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./attendance.html",
+  "./style.css",
+  "./attendance.css",
+  "./app.js",
+  "./attendance.js",
+  "./firebase.js",
+  "./manifest.json"
+];
 
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#0b3188">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="STE2000 Attendance">
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+  );
+  self.skipWaiting();
+});
 
-  <link rel="stylesheet" href="attendance.css">
-</head>
-<body>
-  <div class="attendance-app">
-    <main class="main-content">
-      <section id="homeSection" class="page-section active">
-        <div class="home-shell">
-          <section class="time-card">
-            <div class="time-card-header">
-              <svg
-                class="header-clock-icon"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.1"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="9"></circle>
-                <path d="M12 7v5l3 2"></path>
-              </svg>
-              <p class="time-card-title">เวลาปัจจุบัน</p>
-            </div>
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      )
+    )
+  );
+  self.clients.claim();
+});
 
-            <p id="currentTime" class="current-time">--:--</p>
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
 
-            <div class="divider"></div>
+  if (request.method !== "GET") {
+    return;
+  }
 
-            <p id="currentDate" class="current-date">--</p>
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
-            <div class="work-time-row">
-              <div class="work-time-item">
-                <span class="work-time-label">เข้างาน:</span>
-                <span id="checkInDisplay" class="work-time-value">--:--</span>
-              </div>
+      return fetch(request)
+        .then((networkResponse) => {
+          const responseClone = networkResponse.clone();
 
-              <div class="work-time-item">
-                <span class="work-time-label">ออกงาน:</span>
-                <span id="checkOutDisplay" class="work-time-value">--:--</span>
-              </div>
-            </div>
-          </section>
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
 
-          <div class="location-row">
-            <svg
-              class="map-pin-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"
-                fill="#d80000"
-              ></path>
-              <circle cx="12" cy="10" r="2.7" fill="#ffffff"></circle>
-            </svg>
-
-            <p class="location-text">
-              <span class="location-label">สถานที่:</span>
-              <span id="siteDisplay" class="location-value">กำลังตรวจตำแหน่ง...</span>
-            </p>
-          </div>
-
-          <button id="mainActionBtn" class="main-action-btn state-checkin">
-            เข้างาน
-          </button>
-
-          <div class="logic-only">
-            <p id="statusText">ยังไม่ได้เข้างาน</p>
-            <p id="subStatusText">พร้อมเริ่มงาน</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="profileSection" class="page-section">
-        <div class="employee-card">
-          <div class="employee-card-top">
-            <p class="company-name">S.TUNTIVIVAT ENGINEERING 2000</p>
-            <p class="company-subtitle">EMPLOYEE PROFILE</p>
-          </div>
-
-          <div class="employee-card-body">
-            <div class="profile-line">
-              <span class="profile-label">ชื่อผู้ใช้</span>
-              <span id="profileEmail" class="profile-value">-</span>
-            </div>
-
-            <div class="profile-line">
-              <span class="profile-label">รหัสผู้ใช้</span>
-              <span id="profileUid" class="profile-value">-</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="profile-actions">
-          <button id="logoutBtn" class="logout-btn">ออกจากระบบ</button>
-        </div>
-      </section>
-
-      <section id="leaveSection" class="page-section">
-        <div class="coming-soon-card">
-          <h2>หน้าลางาน</h2>
-          <p>
-            หน้านี้จะทำต่อในขั้นถัดไป
-            รอบนี้ยังไม่ได้ใส่ logic การส่งลา, แนบใบแพทย์,
-            ประวัติลา และวันหยุดบริษัท
-          </p>
-        </div>
-      </section>
-    </main>
-
-    <nav class="bottom-nav">
-      <button id="homeTabBtn" class="nav-btn active">
-        <span class="nav-icon">⌂</span>
-        <span class="nav-text">Home</span>
-      </button>
-
-      <button id="profileTabBtn" class="nav-btn nav-btn-center">
-        <span class="nav-icon">👤</span>
-        <span class="nav-text">Profile</span>
-      </button>
-
-      <button id="leaveTabBtn" class="nav-btn">
-        <span class="nav-icon">📝</span>
-        <span class="nav-text">Leave</span>
-      </button>
-    </nav>
-  </div>
-
-  <div id="appLoadingOverlay" class="app-loading-overlay">
-    <div class="app-loading-card">
-      <div class="app-loading-spinner"></div>
-      <p class="app-loading-title">กำลังโหลดข้อมูล</p>
-      <p id="appLoadingText" class="app-loading-text">กรุณารอสักครู่...</p>
-    </div>
-  </div>
-
-  <div id="popupOverlay" class="popup-overlay hidden">
-    <div class="popup-card">
-      <p id="popupTitle" class="popup-title">สำเร็จ</p>
-      <p id="popupMessage" class="popup-message">ข้อความ</p>
-
-      <div id="popupActions" class="popup-actions">
-        <button id="popupCancelBtn" class="popup-btn popup-btn-secondary">ยกเลิก</button>
-        <button id="popupConfirmBtn" class="popup-btn popup-btn-primary">ตกลง</button>
-      </div>
-    </div>
-  </div>
-
-  <script type="module" src="attendance.js"></script>
-</body>
-</html>
+          return networkResponse;
+        })
+        .catch(() => caches.match("./index.html"));
+    })
+  );
+});
