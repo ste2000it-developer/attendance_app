@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&family=Audiowide&display=swap');
 
 * {
   box-sizing: border-box;
@@ -8,6 +8,9 @@ html,
 body {
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  height: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -89,7 +92,7 @@ button {
   text-align: center;
   font-family: 'Audiowide', sans-serif;
   font-size: 72px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.08;
   letter-spacing: -1.8px;
   color: #0b3188;
@@ -630,9 +633,4 @@ button {
     height: 82px;
     flex: 0 0 82px;
   }
-  html, body {
-  overflow: hidden;
-  height: 100%;
-  touch-action: manipulation;
-}
 }
