@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <meta charset="UTF-8">
   <meta
     name="viewport"
@@ -129,23 +130,21 @@
       </section>
     </main>
 
-    <nav class="bottom-nav">
-      <button id="homeTabBtn" class="nav-btn active">
-        <span class="nav-icon">⌂</span>
-        <span class="nav-text">Home</span>
-      </button>
-
-      <button id="profileTabBtn" class="nav-btn nav-btn-center">
-        <span class="nav-icon">👤</span>
-        <span class="nav-text">Profile</span>
-      </button>
-
-      <button id="leaveTabBtn" class="nav-btn">
-        <span class="nav-icon">📝</span>
-        <span class="nav-text">Leave</span>
-      </button>
-    </nav>
+    <div class="bottom-nav">
+  <div class="nav-item active">
+    <span class="material-symbols-outlined">home</span>
+    <div>หน้าหลัก</div>
   </div>
+
+  <div class="nav-item center">
+    <span class="material-symbols-outlined">person</span>
+  </div>
+
+  <div class="nav-item">
+    <span class="material-symbols-outlined">description</span>
+    <div>ใบลา</div>
+  </div>
+</div>
 
   <div id="appLoadingOverlay" class="app-loading-overlay">
     <div class="app-loading-card">
