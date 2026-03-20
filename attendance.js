@@ -12,7 +12,13 @@ import {
   onAuthStateChanged,
   signOut
 } from "./firebase.js";
+// 🔥 กัน swipe back
+history.replaceState(null, "", window.location.href);
+history.pushState(null, "", window.location.href);
 
+window.addEventListener("popstate", () => {
+  history.pushState(null, "", window.location.href);
+});
 const currentTimeEl = document.getElementById("currentTime");
 const currentDateEl = document.getElementById("currentDate");
 const checkInDisplayEl = document.getElementById("checkInDisplay");
