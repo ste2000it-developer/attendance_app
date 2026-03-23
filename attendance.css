@@ -1015,4 +1015,41 @@ textarea {
     -webkit-overflow-scrolling: touch;
     touch-action: manipulation;
   }
+
+  /* ===== SCROLL CONTROL ===== */
+
+/* ล็อกทั้งแอพ */
+html, body {
+  overflow: hidden;
+  height: 100%;
+}
+
+/* หน้า home ห้ามเลื่อน */
+#homeSection.active {
+  overflow: hidden;
+}
+
+/* หน้า profile ห้ามเลื่อน */
+#profileSection.active {
+  overflow: hidden;
+}
+
+/* หน้า leave เลื่อนได้ */
+#leaveSection.active {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 120px);
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 120px;
+}
+
+/* กัน input ล้น */
+#leaveForm input,
+#leaveForm select,
+#leaveForm textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
 }
