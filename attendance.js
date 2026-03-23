@@ -44,6 +44,8 @@ const popupConfirmBtn = document.getElementById("popupConfirmBtn");
 const appLoadingOverlay = document.getElementById("appLoadingOverlay");
 const appLoadingText = document.getElementById("appLoadingText");
 
+const ADMIN_PIN = "1234";
+
 let currentRecord = null;
 let currentEmployeeCode = null;
 let currentEmployeeName = null;
@@ -64,6 +66,56 @@ let locationLoadingInterval = null;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getDeviceId() {
+  let deviceId = localStorage.getItem("deviceId");
+
+  if (!deviceId) {
+    deviceId =
+      "dev-" +
+      Date.now().toString(36) +
+      "-" +
+      Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("deviceId", deviceId);
+  }
+
+  return deviceId;
+}
+
+async function getUserDocByUid(uid) {
+  const usersRef = collection(db, "users");
+  const q = query(usersRef, where("uid", "==", uid));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error("USER_PROFILE_NOT_FOUND");
+  }
+
+  return snapshot.docs[0];
+}
+
+async function validateDeviceForCurrentUser(user) {
+  const userDoc = await getUserDocByUid(user.uid);
+  const userData = userDoc.data();
+  const currentDeviceId = getDeviceId();
+
+  if (!userData.deviceId) {
+    await setDoc(
+      doc(db, "users", userDoc.id),
+      {
+        deviceId: currentDeviceId,
+        deviceBoundAt: new Date().toISOString(),
+        deviceLabel: navigator.userAgent
+      },
+      { merge: true }
+    );
+    return;
+  }
+
+  if (userData.deviceId !== currentDeviceId) {
+    throw new Error("DEVICE_NOT_ALLOWED");
+  }
 }
 
 function setAppLoading(message) {
@@ -163,7 +215,7 @@ function formatCurrentTime(date) {
   return date.toLocaleTimeString("th-TH", {
     hour: "2-digit",
     minute: "2-digit",
-    seconds: "2-digit"
+    second: "2-digit"
   });
 }
 
@@ -451,18 +503,10 @@ function getAttendanceDayRef(employeeCode, workdayKey) {
 }
 
 async function loadEmployeeInfo(uid) {
-  const usersRef = collection(db, "users");
-  const q = query(usersRef, where("uid", "==", uid));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    throw new Error("USER_PROFILE_NOT_FOUND");
-  }
-
-  const userDoc = querySnapshot.docs[0];
+  const userDoc = await getUserDocByUid(uid);
   const userData = userDoc.data();
 
-  currentEmployeeCode = userData.employeeId || null;
+  currentEmployeeCode = userData.employeeId || userDoc.id || null;
   currentEmployeeName = userData.nameTH || "";
 
   if (!currentEmployeeCode) {
@@ -884,6 +928,10 @@ function handleMainAction() {
   }
 }
 
+function normalizeLiveSiteDisplaySafe() {
+  normalizeLiveSiteName();
+}
+
 function setActiveSection(sectionName) {
   if (!isAppReady) {
     return;
@@ -912,10 +960,6 @@ function setActiveSection(sectionName) {
     leaveSection.classList.add("active");
     leaveTabBtn.classList.add("active");
   }
-}
-
-function normalizeLiveSiteDisplaySafe() {
-  normalizeLiveSiteName();
 }
 
 function updateProfile(user) {
@@ -993,6 +1037,7 @@ async function processPreviousWorkdayAutoCheckoutIfNeeded() {
 
   const previousDate = new Date(now);
   previousDate.setDate(previousDate.getDate() - 1);
+
   const previousWorkdayKey = (() => {
     const year = previousDate.getFullYear();
     const month = String(previousDate.getMonth() + 1).padStart(2, "0");
@@ -1057,9 +1102,61 @@ popupOverlay.addEventListener("click", (event) => {
   }
 });
 
-logoutBtn.addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.replace("./index.html");
+logoutBtn.addEventListener("click", () => {
+  showPopup({
+    title: "ยืนยันออกจากระบบ",
+    message: "ต้องใช้ PIN แอดมิน",
+    mode: "confirm",
+    confirmText: "ยืนยัน",
+    cancelText: "ยกเลิก",
+    onConfirm: async () => {
+      hidePopup();
+
+      const pin = window.prompt("กรุณาใส่ PIN แอดมิน");
+
+      if (pin !== ADMIN_PIN) {
+        showPopup({
+          title: "ผิดพลาด",
+          message: "PIN ไม่ถูกต้อง",
+          mode: "alert",
+          confirmText: "ตกลง"
+        });
+        return;
+      }
+
+      try {
+        const user = auth.currentUser;
+
+        if (user) {
+          const userDoc = await getUserDocByUid(user.uid);
+
+          await setDoc(
+            doc(db, "users", userDoc.id),
+            {
+              deviceId: "",
+              deviceBoundAt: null,
+              deviceLabel: null
+            },
+            { merge: true }
+          );
+        }
+
+        localStorage.removeItem("deviceId");
+
+        await signOut(auth);
+        window.location.replace("./index.html");
+      } catch (error) {
+        console.error(error);
+
+        showPopup({
+          title: "ผิดพลาด",
+          message: "ออกจากระบบไม่สำเร็จ",
+          mode: "alert",
+          confirmText: "ตกลง"
+        });
+      }
+    }
+  });
 });
 
 window.addEventListener("beforeunload", () => {
@@ -1076,6 +1173,10 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     isAppReady = false;
+    setAppLoading("กำลังตรวจสอบเครื่อง...");
+
+    await validateDeviceForCurrentUser(user);
+
     setAppLoading("กำลังโหลดข้อมูลพนักงาน...");
 
     updateProfile(user);
@@ -1128,13 +1229,26 @@ onAuthStateChanged(auth, async (user) => {
       message = "ไม่พบรหัสพนักงานในข้อมูลผู้ใช้";
     }
 
+    if (error.message === "DEVICE_NOT_ALLOWED") {
+      message = "บัญชีนี้ถูกผูกกับเครื่องอื่น";
+    }
+
     appLoadingOverlay.classList.add("hidden");
+
+    if (error.message === "DEVICE_NOT_ALLOWED") {
+      await signOut(auth);
+    }
 
     showPopup({
       title: "ผิดพลาด",
       message,
       mode: "alert",
-      confirmText: "ตกลง"
+      confirmText: "ตกลง",
+      onConfirm: () => {
+        if (error.message === "DEVICE_NOT_ALLOWED") {
+          window.location.replace("./index.html");
+        }
+      }
     });
   }
 });

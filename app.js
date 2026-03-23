@@ -1,7 +1,15 @@
 import {
   auth,
+  db,
+  doc,
+  getDocs,
+  setDoc,
+  collection,
+  query,
+  where,
   onAuthStateChanged,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  signOut
 } from "./firebase.js";
 
 const loginForm = document.getElementById("loginForm");
@@ -10,6 +18,7 @@ const passwordInput = document.getElementById("password");
 const togglePasswordBtn = document.getElementById("togglePasswordBtn");
 const loginBtn = document.getElementById("loginBtn");
 const loginMessage = document.getElementById("loginMessage");
+
 const eyeOpenIcon = document.getElementById("eyeOpenIcon");
 const eyeOffIcon = document.getElementById("eyeOffIcon");
 
@@ -18,15 +27,97 @@ const passwordGroup = document.getElementById("passwordGroup");
 
 let isPasswordVisible = false;
 
-// 🔥 เช็ค session ก่อนโชว์หน้า
-onAuthStateChanged(auth, (user) => {
+function getDeviceId() {
+  let deviceId = localStorage.getItem("deviceId");
+
+  if (!deviceId) {
+    deviceId =
+      "dev-" +
+      Date.now().toString(36) +
+      "-" +
+      Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("deviceId", deviceId);
+  }
+
+  return deviceId;
+}
+
+// 🔥 หา user doc จาก uid
+async function getUserDoc(user) {
+  const usersRef = collection(db, "users");
+  const q = query(usersRef, where("uid", "==", user.uid));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error("USER_PROFILE_NOT_FOUND");
+  }
+
+  return snapshot.docs[0]; // <-- ตัวนี้สำคัญ (มี id = IT00001)
+}
+
+// 🔥 ตรวจ device
+async function validateDevice(user) {
+  const userDoc = await getUserDoc(user);
+  const userData = userDoc.data();
+
+  const currentDeviceId = getDeviceId();
+
+  // ยังไม่ผูกเครื่อง
+  if (!userData.deviceId) {
+    await setDoc(
+      doc(db, "users", userDoc.id),
+      {
+        deviceId: currentDeviceId,
+        deviceBoundAt: new Date().toISOString(),
+        deviceLabel: navigator.userAgent
+      },
+      { merge: true }
+    );
+
+    return true;
+  }
+
+  // เครื่องตรง
+  if (userData.deviceId === currentDeviceId) {
+    return true;
+  }
+
+  // เครื่องไม่ตรง
+  return false;
+}
+
+// 🔥 เช็ค session
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    window.location.replace("./attendance.html");
+    try {
+      const ok = await validateDevice(user);
+
+      if (!ok) {
+        await signOut(auth);
+        showError("บัญชีนี้ถูกใช้งานบนเครื่องอื่น");
+        document.body.style.display = "block";
+        return;
+      }
+
+      window.location.replace("./attendance.html");
+
+    } catch (error) {
+      console.error(error);
+
+      if (error.message === "USER_PROFILE_NOT_FOUND") {
+        showError("ไม่พบข้อมูลผู้ใช้ในระบบ");
+      } else {
+        showError("เกิดข้อผิดพลาด");
+      }
+
+      document.body.style.display = "block";
+    }
   } else {
     document.body.style.display = "block";
   }
 });
 
+// ================= UI =================
 function updateFloatingState(inputElement, groupElement) {
   const hasValue = inputElement.value.trim() !== "";
   const isFocused = document.activeElement === inputElement;
@@ -59,11 +150,6 @@ function showError(message) {
   loginMessage.textContent = message;
 }
 
-function showSuccess(message) {
-  loginMessage.style.color = "#1f8b4c";
-  loginMessage.textContent = message;
-}
-
 function getFriendlyFirebaseError(errorCode) {
   switch (errorCode) {
     case "auth/invalid-email":
@@ -73,9 +159,9 @@ function getFriendlyFirebaseError(errorCode) {
     case "auth/wrong-password":
       return "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
     case "auth/too-many-requests":
-      return "ลองผิดหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง";
+      return "ลองผิดหลายครั้งเกินไป";
     case "auth/network-request-failed":
-      return "อินเทอร์เน็ตมีปัญหา กรุณาลองใหม่";
+      return "อินเทอร์เน็ตมีปัญหา";
     default:
       return "เข้าสู่ระบบไม่สำเร็จ";
   }
@@ -87,26 +173,17 @@ bindFloatingInput(passwordInput, passwordGroup);
 togglePasswordBtn.addEventListener("click", () => {
   isPasswordVisible = !isPasswordVisible;
 
-  if (isPasswordVisible) {
-    passwordInput.type = "text";
-    eyeOpenIcon.classList.add("hidden");
-    eyeOffIcon.classList.remove("hidden");
-  } else {
-    passwordInput.type = "password";
-    eyeOpenIcon.classList.remove("hidden");
-    eyeOffIcon.classList.add("hidden");
-  }
-
-  updateFloatingState(passwordInput, passwordGroup);
+  passwordInput.type = isPasswordVisible ? "text" : "password";
+  eyeOpenIcon.classList.toggle("hidden");
+  eyeOffIcon.classList.toggle("hidden");
 });
 
+// 🔥 LOGIN
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const email = emailInput.value.trim();
   const password = passwordInput.value;
-
-  loginMessage.textContent = "";
 
   if (!email || !password) {
     showError("กรุณากรอกอีเมลและรหัสผ่าน");
@@ -118,7 +195,6 @@ loginForm.addEventListener("submit", async (event) => {
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    window.location.replace("./attendance.html"); // 🔥 แก้ตรงนี้
   } catch (error) {
     showError(getFriendlyFirebaseError(error.code));
   } finally {
