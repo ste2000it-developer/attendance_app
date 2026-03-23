@@ -8,7 +8,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100%;
 }
 
 body {
@@ -26,8 +27,10 @@ textarea {
 
 .attendance-app {
   min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .main-content {
@@ -36,9 +39,10 @@ textarea {
   max-width: 430px;
   margin: 0 auto;
   padding: 52px 22px 128px;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
+/* แต่ละหน้า */
 .page-section {
   display: none;
 }
@@ -47,10 +51,30 @@ textarea {
   display: block;
 }
 
+/* HOME: ห้ามเลื่อน */
 #homeSection.active {
   min-height: calc(100vh - 180px);
   display: flex;
   align-items: center;
+  overflow: hidden;
+}
+
+/* PROFILE: เลื่อนได้ */
+#profileSection.active {
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 120px;
+}
+
+/* LEAVE: เลื่อนได้ */
+#leaveSection.active {
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 120px;
 }
 
 .home-shell {
@@ -407,7 +431,10 @@ textarea {
 
 .leave-input,
 .leave-textarea,
-.leave-file-input {
+.leave-file-input,
+#leaveForm input,
+#leaveForm select,
+#leaveForm textarea {
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -927,6 +954,12 @@ textarea {
     min-height: calc(100vh - 172px);
   }
 
+  #profileSection.active,
+  #leaveSection.active {
+    height: calc(100vh - 172px);
+    padding-bottom: 120px;
+  }
+
   .home-shell {
     padding: 18px 14px 16px;
     border-radius: 26px;
@@ -989,7 +1022,10 @@ textarea {
 
   .leave-input,
   .leave-textarea,
-  .leave-file-input {
+  .leave-file-input,
+  #leaveForm input,
+  #leaveForm select,
+  #leaveForm textarea {
     font-size: 16px;
   }
 
@@ -1006,50 +1042,4 @@ textarea {
     height: 82px;
     flex: 0 0 82px;
   }
-
-  html,
-  body {
-    overflow-x: hidden;
-    overflow-y: auto;
-    min-height: 100%;
-    -webkit-overflow-scrolling: touch;
-    touch-action: manipulation;
-  }
-
-  /* ===== SCROLL CONTROL ===== */
-
-/* ล็อกทั้งแอพ */
-html, body {
-  overflow: hidden;
-  height: 100%;
-}
-
-/* หน้า home ห้ามเลื่อน */
-#homeSection.active {
-  overflow: hidden;
-}
-
-/* หน้า profile ห้ามเลื่อน */
-#profileSection.active {
-  overflow: hidden;
-}
-
-/* หน้า leave เลื่อนได้ */
-#leaveSection.active {
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: calc(100vh - 120px);
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 120px;
-}
-
-/* กัน input ล้น */
-#leaveForm input,
-#leaveForm select,
-#leaveForm textarea {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
 }
