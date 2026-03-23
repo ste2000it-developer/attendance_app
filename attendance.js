@@ -1578,61 +1578,38 @@ popupOverlay.addEventListener("click", (event) => {
   }
 });
 
-logoutBtn.addEventListener("click", () => {
-  showPopup({
-    title: "ยืนยันออกจากระบบ",
-    message: "ต้องใช้ PIN แอดมิน",
-    mode: "confirm",
-    confirmText: "ยืนยัน",
-    cancelText: "ยกเลิก",
-    onConfirm: async () => {
-      hidePopup();
+logoutBtn.addEventListener("click", async () => {
+  try {
+    const user = auth.currentUser;
 
-      const pin = window.prompt("กรุณาใส่ PIN แอดมิน");
+    if (user) {
+      const userDoc = await getUserDocByUid(user.uid);
 
-      if (pin !== ADMIN_PIN) {
-        showPopup({
-          title: "ผิดพลาด",
-          message: "PIN ไม่ถูกต้อง",
-          mode: "alert",
-          confirmText: "ตกลง"
-        });
-        return;
-      }
-
-      try {
-        const user = auth.currentUser;
-
-        if (user) {
-          const userDoc = await getUserDocByUid(user.uid);
-
-          await setDoc(
-            doc(db, "users", userDoc.id),
-            {
-              deviceId: "",
-              deviceBoundAt: null,
-              deviceLabel: null
-            },
-            { merge: true }
-          );
-        }
-
-        localStorage.removeItem("deviceId");
-
-        await signOut(auth);
-        window.location.replace("./index.html");
-      } catch (error) {
-        console.error(error);
-
-        showPopup({
-          title: "ผิดพลาด",
-          message: "ออกจากระบบไม่สำเร็จ",
-          mode: "alert",
-          confirmText: "ตกลง"
-        });
-      }
+      await setDoc(
+        doc(db, "users", userDoc.id),
+        {
+          deviceId: "",
+          deviceBoundAt: null,
+          deviceLabel: null
+        },
+        { merge: true }
+      );
     }
-  });
+
+    localStorage.removeItem("deviceId");
+
+    await signOut(auth);
+    window.location.replace("./index.html");
+  } catch (error) {
+    console.error(error);
+
+    showPopup({
+      title: "ผิดพลาด",
+      message: "ออกจากระบบไม่สำเร็จ",
+      mode: "alert",
+      confirmText: "ตกลง"
+    });
+  }
 });
 
 window.addEventListener("beforeunload", () => {
