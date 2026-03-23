@@ -162,7 +162,8 @@ function formatTime(date) {
 function formatCurrentTime(date) {
   return date.toLocaleTimeString("th-TH", {
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    seconds: "2-digit"
   });
 }
 
