@@ -44,11 +44,87 @@ const popupConfirmBtn = document.getElementById("popupConfirmBtn");
 const appLoadingOverlay = document.getElementById("appLoadingOverlay");
 const appLoadingText = document.getElementById("appLoadingText");
 
+const leaveEmployeeNameEl = document.getElementById("leaveEmployeeName");
+const leaveEmployeeCodeEl = document.getElementById("leaveEmployeeCode");
+const leaveEmployeeDepartmentEl = document.getElementById("leaveEmployeeDepartment");
+const leaveEmployeePositionEl = document.getElementById("leaveEmployeePosition");
+
+const leaveForm = document.getElementById("leaveForm");
+const leaveTypeSelect = document.getElementById("leaveTypeSelect");
+const leaveStartDate = document.getElementById("leaveStartDate");
+const leaveEndDate = document.getElementById("leaveEndDate");
+const leaveNote = document.getElementById("leaveNote");
+const leaveNoteHint = document.getElementById("leaveNoteHint");
+const leaveAttachment = document.getElementById("leaveAttachment");
+const leaveAttachmentName = document.getElementById("leaveAttachmentName");
+const leaveRuleHint = document.getElementById("leaveRuleHint");
+const leaveTotalDays = document.getElementById("leaveTotalDays");
+const submitLeaveBtn = document.getElementById("submitLeaveBtn");
+const leaveHistoryLoading = document.getElementById("leaveHistoryLoading");
+const leaveHistoryList = document.getElementById("leaveHistoryList");
+
 const ADMIN_PIN = "1234";
+const LEAVE_ATTACHMENT_MAX_MB = 2;
+
+const LEAVE_TYPES = {
+  annual: {
+    label: "ลาพักร้อนประจำปี",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  sick: {
+    label: "ลาป่วย",
+    requiresAdvance: false,
+    requiresNote: false
+  },
+  training: {
+    label: "ลาเพื่อฝึกอบรม/พัฒนาความรู้",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  military: {
+    label: "ลารับราชการทหาร",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  ordination: {
+    label: "ลาอุปสมบท",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  maternity: {
+    label: "ลาคลอด",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  sterilization: {
+    label: "ลาเพื่อทำหมัน",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  unpaid_personal: {
+    label: "ลากิจโดยไม่รับค่าจ้าง",
+    requiresAdvance: true,
+    requiresNote: false
+  },
+  emergency: {
+    label: "ลาฉุกเฉิน",
+    requiresAdvance: false,
+    requiresNote: true
+  },
+  other: {
+    label: "อื่นๆ",
+    requiresAdvance: false,
+    requiresNote: true
+  }
+};
 
 let currentRecord = null;
 let currentEmployeeCode = null;
 let currentEmployeeName = null;
+let currentEmployeeDepartment = null;
+let currentEmployeePosition = null;
+let currentUserProfile = null;
 let pageTimer = null;
 
 let currentLiveLocation = null;
@@ -61,6 +137,7 @@ let isActionRunning = false;
 let isAppReady = false;
 let isAutoCheckoutRunning = false;
 let isWorkdaySyncRunning = false;
+let isLeaveSubmitting = false;
 
 let locationLoadingInterval = null;
 
@@ -169,6 +246,39 @@ function getNow() {
   return new Date();
 }
 
+function getTodayLocalDate() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function parseYmdToLocalDate(ymd) {
+  if (!ymd) return null;
+  const [year, month, day] = ymd.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatThaiDate(ymd) {
+  const date = parseYmdToLocalDate(ymd);
+  if (!date) return "-";
+  return date.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function getInclusiveDays(startYmd, endYmd) {
+  const start = parseYmdToLocalDate(startYmd);
+  const end = parseYmdToLocalDate(endYmd);
+
+  if (!start || !end || end < start) {
+    return 0;
+  }
+
+  const diffMs = end - start;
+  return Math.floor(diffMs / 86400000) + 1;
+}
+
 function getWorkdayBaseDate(date) {
   const base = new Date(date);
   const hour = base.getHours();
@@ -225,6 +335,18 @@ function formatCurrentDate(date) {
     day: "numeric",
     month: "long",
     year: "numeric"
+  });
+}
+
+function formatDateTimeThai(isoString) {
+  if (!isoString) return "-";
+  const date = new Date(isoString);
+  return date.toLocaleString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
 
@@ -494,6 +616,329 @@ function hidePopup() {
   popupOverlay.classList.add("hidden");
 }
 
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getStatusBadgeClass(status) {
+  if (status === "approved") return "leave-status-approved";
+  if (status === "rejected") return "leave-status-rejected";
+  if (status === "pending") return "leave-status-pending";
+  return "leave-status-default";
+}
+
+function getStatusLabel(status) {
+  if (status === "approved") return "อนุมัติแล้ว";
+  if (status === "rejected") return "ไม่อนุมัติ";
+  if (status === "pending") return "รออนุมัติ";
+  return status || "-";
+}
+
+function updateLeaveEmployeeUI() {
+  if (!leaveEmployeeNameEl) return;
+  leaveEmployeeNameEl.textContent = currentEmployeeName || "-";
+  leaveEmployeeCodeEl.textContent = currentEmployeeCode || "-";
+  leaveEmployeeDepartmentEl.textContent = currentEmployeeDepartment || "-";
+  leaveEmployeePositionEl.textContent = currentEmployeePosition || "-";
+}
+
+function updateLeaveTypeUI() {
+  if (!leaveTypeSelect) return;
+
+  const typeConfig = LEAVE_TYPES[leaveTypeSelect.value];
+
+  if (!typeConfig) {
+    leaveRuleHint.textContent = "เลือกประเภทการลา";
+    leaveNoteHint.textContent = "ลาฉุกเฉินและอื่นๆ ต้องกรอกหมายเหตุ";
+    leaveNote.placeholder = "ระบุรายละเอียดเพิ่มเติม (ถ้ามี)";
+    return;
+  }
+
+  leaveRuleHint.textContent = typeConfig.requiresAdvance
+    ? "ต้องลาล่วงหน้าอย่างน้อย 1 วัน"
+    : "สามารถยื่นลาในวันเดียวกันได้";
+
+  leaveNoteHint.textContent = typeConfig.requiresNote
+    ? "ประเภทนี้ต้องกรอกหมายเหตุ"
+    : "หมายเหตุไม่บังคับ";
+
+  leaveNote.placeholder = typeConfig.requiresNote
+    ? "กรุณาระบุรายละเอียด"
+    : "ระบุรายละเอียดเพิ่มเติม (ถ้ามี)";
+}
+
+function updateLeaveTotalDaysUI() {
+  if (!leaveTotalDays) return;
+  const total = getInclusiveDays(leaveStartDate.value, leaveEndDate.value);
+  leaveTotalDays.textContent = `${total} วัน`;
+}
+
+function updateAttachmentNameUI() {
+  if (!leaveAttachmentName) return;
+  const file = leaveAttachment.files?.[0];
+  leaveAttachmentName.textContent = file ? file.name : "ยังไม่ได้เลือกไฟล์";
+}
+
+function validateLeaveForm() {
+  const leaveType = leaveTypeSelect.value;
+  const startDate = leaveStartDate.value;
+  const endDate = leaveEndDate.value;
+  const note = leaveNote.value.trim();
+  const file = leaveAttachment.files?.[0] || null;
+
+  if (!currentUserProfile) {
+    return "ไม่พบข้อมูลผู้ลา";
+  }
+
+  if (!leaveType || !LEAVE_TYPES[leaveType]) {
+    return "กรุณาเลือกประเภทการลา";
+  }
+
+  if (!startDate || !endDate) {
+    return "กรุณาเลือกช่วงวันลา";
+  }
+
+  const start = parseYmdToLocalDate(startDate);
+  const end = parseYmdToLocalDate(endDate);
+
+  if (!start || !end) {
+    return "รูปแบบวันที่ไม่ถูกต้อง";
+  }
+
+  if (end < start) {
+    return "วันสิ้นสุดลาต้องไม่ก่อนวันเริ่มลา";
+  }
+
+  const typeConfig = LEAVE_TYPES[leaveType];
+
+  if (typeConfig.requiresNote && !note) {
+    return "ประเภทการลานี้ต้องกรอกหมายเหตุ";
+  }
+
+  if (typeConfig.requiresAdvance) {
+    const today = getTodayLocalDate();
+    const minAdvanceDate = new Date(today);
+    minAdvanceDate.setDate(minAdvanceDate.getDate() + 1);
+
+    if (start < minAdvanceDate) {
+      return "ประเภทการลานี้ต้องยื่นลาล่วงหน้าอย่างน้อย 1 วัน";
+    }
+  }
+
+  if (file) {
+    const sizeMb = file.size / (1024 * 1024);
+    if (sizeMb > LEAVE_ATTACHMENT_MAX_MB) {
+      return `ไฟล์แนบต้องมีขนาดไม่เกิน ${LEAVE_ATTACHMENT_MAX_MB} MB`;
+    }
+  }
+
+  return null;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function resetLeaveForm() {
+  leaveForm.reset();
+  updateLeaveTypeUI();
+  updateLeaveTotalDaysUI();
+  updateAttachmentNameUI();
+}
+
+function createLeaveRequestRef() {
+  return doc(collection(db, "leaveRequests"));
+}
+
+async function loadLeaveHistory() {
+  if (!leaveHistoryLoading || !leaveHistoryList) {
+    return;
+  }
+
+  if (!auth.currentUser) {
+    leaveHistoryLoading.textContent = "ไม่พบผู้ใช้งาน";
+    return;
+  }
+
+  leaveHistoryLoading.style.display = "block";
+  leaveHistoryList.innerHTML = "";
+
+  try {
+    const leaveRef = collection(db, "leaveRequests");
+    const q = query(leaveRef, where("uid", "==", auth.currentUser.uid));
+    const snapshot = await getDocs(q);
+
+    const items = snapshot.docs
+      .map((leaveDoc) => ({
+        id: leaveDoc.id,
+        ...leaveDoc.data()
+      }))
+      .sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+
+    leaveHistoryLoading.style.display = "none";
+
+    if (!items.length) {
+      leaveHistoryList.innerHTML = `
+        <div class="leave-history-empty">ยังไม่มีประวัติการลา</div>
+      `;
+      return;
+    }
+
+    leaveHistoryList.innerHTML = items
+      .map((item) => {
+        const attachmentHtml =
+          item.attachmentDataUrl && item.attachmentName
+            ? `
+              <div class="leave-history-attachment">
+                <a href="${item.attachmentDataUrl}" target="_blank" rel="noopener noreferrer">
+                  ดูไฟล์แนบ: ${escapeHtml(item.attachmentName)}
+                </a>
+              </div>
+            `
+            : "";
+
+        const noteHtml = item.note
+          ? `<div class="leave-history-note">${escapeHtml(item.note)}</div>`
+          : "";
+
+        return `
+          <div class="leave-history-item">
+            <div class="leave-history-top">
+              <div>
+                <p class="leave-history-type">${escapeHtml(item.leaveTypeLabel || "-")}</p>
+                <p class="leave-history-dates">
+                  ${escapeHtml(formatThaiDate(item.startDate))} - ${escapeHtml(formatThaiDate(item.endDate))}
+                </p>
+              </div>
+              <span class="leave-status-badge ${getStatusBadgeClass(item.status)}">
+                ${escapeHtml(getStatusLabel(item.status))}
+              </span>
+            </div>
+
+            <div class="leave-history-meta">
+              <div class="leave-history-meta-item">
+                <span class="leave-history-meta-label">จำนวนวัน</span>
+                <span class="leave-history-meta-value">${escapeHtml(item.totalDays || 0)} วัน</span>
+              </div>
+
+              <div class="leave-history-meta-item">
+                <span class="leave-history-meta-label">วันที่ส่งคำขอ</span>
+                <span class="leave-history-meta-value">${escapeHtml(formatDateTimeThai(item.createdAt))}</span>
+              </div>
+            </div>
+
+            ${noteHtml}
+            ${attachmentHtml}
+          </div>
+        `;
+      })
+      .join("");
+  } catch (error) {
+    console.error(error);
+    leaveHistoryLoading.style.display = "none";
+    leaveHistoryList.innerHTML = `
+      <div class="leave-history-empty">โหลดประวัติการลาไม่สำเร็จ</div>
+    `;
+  }
+}
+
+async function handleLeaveSubmit(event) {
+  event.preventDefault();
+
+  if (isLeaveSubmitting) {
+    return;
+  }
+
+  const validationError = validateLeaveForm();
+
+  if (validationError) {
+    showPopup({
+      title: "กรอกข้อมูลไม่ครบ",
+      message: validationError,
+      mode: "alert",
+      confirmText: "ตกลง"
+    });
+    return;
+  }
+
+  try {
+    isLeaveSubmitting = true;
+    submitLeaveBtn.disabled = true;
+    submitLeaveBtn.classList.add("loading");
+    submitLeaveBtn.textContent = "กำลังส่งคำขอ...";
+
+    const leaveType = leaveTypeSelect.value;
+    const leaveTypeConfig = LEAVE_TYPES[leaveType];
+    const startDate = leaveStartDate.value;
+    const endDate = leaveEndDate.value;
+    const note = leaveNote.value.trim();
+    const file = leaveAttachment.files?.[0] || null;
+    const attachmentDataUrl = await readFileAsDataUrl(file);
+
+    const leaveRequestRef = createLeaveRequestRef();
+
+    await setDoc(leaveRequestRef, {
+      requestId: leaveRequestRef.id,
+      uid: auth.currentUser.uid,
+      employeeId: currentEmployeeCode || "",
+      nameTH: currentEmployeeName || "",
+      departmentTH: currentEmployeeDepartment || "",
+      positionTH: currentEmployeePosition || "",
+      leaveType,
+      leaveTypeLabel: leaveTypeConfig.label,
+      startDate,
+      endDate,
+      totalDays: getInclusiveDays(startDate, endDate),
+      note,
+      attachmentName: file ? file.name : "",
+      attachmentMimeType: file ? file.type : "",
+      attachmentDataUrl: attachmentDataUrl || "",
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdAtServer: serverTimestamp(),
+      updatedAtServer: serverTimestamp()
+    });
+
+    resetLeaveForm();
+    await loadLeaveHistory();
+
+    updatePopupToSuccess("ส่งคำขอสำเร็จ", "ระบบบันทึกใบลาของคุณเรียบร้อยแล้ว");
+  } catch (error) {
+    console.error(error);
+    showPopup({
+      title: "ผิดพลาด",
+      message: "ส่งคำขอลาไม่สำเร็จ",
+      mode: "alert",
+      confirmText: "ตกลง"
+    });
+  } finally {
+    isLeaveSubmitting = false;
+    submitLeaveBtn.disabled = false;
+    submitLeaveBtn.classList.remove("loading");
+    submitLeaveBtn.textContent = "ส่งคำขอลา";
+  }
+}
+
 function getAttendanceRootRef(employeeCode) {
   return doc(db, "attendance", employeeCode);
 }
@@ -507,7 +952,29 @@ async function loadEmployeeInfo(uid) {
   const userData = userDoc.data();
 
   currentEmployeeCode = userData.employeeId || userDoc.id || null;
-  currentEmployeeName = userData.nameTH || "";
+  currentEmployeeName =
+    userData.nameTH ||
+    userData.fullName ||
+    userData.name ||
+    "-";
+  currentEmployeeDepartment =
+    userData.departmentTH ||
+    userData.department ||
+    "-";
+  currentEmployeePosition =
+    userData.positionTH ||
+    userData.position ||
+    "-";
+
+  currentUserProfile = {
+    uid,
+    employeeCode: currentEmployeeCode,
+    nameTH: currentEmployeeName,
+    departmentTH: currentEmployeeDepartment,
+    positionTH: currentEmployeePosition
+  };
+
+  updateLeaveEmployeeUI();
 
   if (!currentEmployeeCode) {
     throw new Error("EMPLOYEE_CODE_NOT_FOUND");
@@ -959,6 +1426,7 @@ function setActiveSection(sectionName) {
   if (sectionName === "leave") {
     leaveSection.classList.add("active");
     leaveTabBtn.classList.add("active");
+    void loadLeaveHistory();
   }
 }
 
@@ -1096,6 +1564,14 @@ leaveTabBtn.addEventListener("click", () => {
 
 mainActionBtn.addEventListener("click", handleMainAction);
 
+if (leaveTypeSelect) {
+  leaveTypeSelect.addEventListener("change", updateLeaveTypeUI);
+  leaveStartDate.addEventListener("change", updateLeaveTotalDaysUI);
+  leaveEndDate.addEventListener("change", updateLeaveTotalDaysUI);
+  leaveAttachment.addEventListener("change", updateAttachmentNameUI);
+  leaveForm.addEventListener("submit", handleLeaveSubmit);
+}
+
 popupOverlay.addEventListener("click", (event) => {
   if (event.target === popupOverlay && !isActionRunning && !isAutoCheckoutRunning) {
     hidePopup();
@@ -1175,6 +1651,12 @@ onAuthStateChanged(auth, async (user) => {
     isAppReady = false;
     setAppLoading("กำลังตรวจสอบเครื่อง...");
 
+    if (leaveTypeSelect) {
+      updateLeaveTypeUI();
+      updateLeaveTotalDaysUI();
+      updateAttachmentNameUI();
+    }
+
     await validateDeviceForCurrentUser(user);
 
     setAppLoading("กำลังโหลดข้อมูลพนักงาน...");
@@ -1195,6 +1677,11 @@ onAuthStateChanged(auth, async (user) => {
 
     setAppLoading("กำลังโหลดจุดสถานที่...");
     await loadSitesCache();
+
+    if (leaveHistoryLoading) {
+      setAppLoading("กำลังโหลดข้อมูลการลา...");
+      await loadLeaveHistory();
+    }
 
     setAppLoading("กำลังตรวจตำแหน่งปัจจุบัน...");
     await refreshCurrentLiveLocationOnce();

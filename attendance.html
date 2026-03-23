@@ -103,9 +103,108 @@
       </section>
 
       <section id="leaveSection" class="page-section">
-        <div class="coming-soon-card">
-          <h2>หน้าลางาน</h2>
-          <p>กำลังพัฒนา...</p>
+        <div class="leave-shell">
+          <div class="leave-card">
+            <div class="leave-card-header">
+              <h2>ยื่นใบลา</h2>
+              <p>กรอกข้อมูลให้ครบก่อนส่งคำขอ</p>
+            </div>
+
+            <div class="leave-employee-card">
+              <div class="leave-employee-grid">
+                <div class="leave-info-item">
+                  <span class="leave-info-label">ชื่อ - นามสกุล</span>
+                  <span id="leaveEmployeeName" class="leave-info-value">-</span>
+                </div>
+                <div class="leave-info-item">
+                  <span class="leave-info-label">รหัสพนักงาน</span>
+                  <span id="leaveEmployeeCode" class="leave-info-value">-</span>
+                </div>
+                <div class="leave-info-item">
+                  <span class="leave-info-label">แผนก</span>
+                  <span id="leaveEmployeeDepartment" class="leave-info-value">-</span>
+                </div>
+                <div class="leave-info-item">
+                  <span class="leave-info-label">ตำแหน่ง</span>
+                  <span id="leaveEmployeePosition" class="leave-info-value">-</span>
+                </div>
+              </div>
+            </div>
+
+            <form id="leaveForm" class="leave-form" novalidate>
+              <div class="leave-form-group">
+                <label for="leaveTypeSelect" class="leave-label">ประเภทการลา</label>
+                <select id="leaveTypeSelect" class="leave-input" required>
+                  <option value="">เลือกประเภทการลา</option>
+                  <option value="annual">ลาพักร้อนประจำปี</option>
+                  <option value="sick">ลาป่วย</option>
+                  <option value="training">ลาเพื่อฝึกอบรม/พัฒนาความรู้</option>
+                  <option value="military">ลารับราชการทหาร</option>
+                  <option value="ordination">ลาอุปสมบท</option>
+                  <option value="maternity">ลาคลอด</option>
+                  <option value="sterilization">ลาเพื่อทำหมัน</option>
+                  <option value="unpaid_personal">ลากิจโดยไม่รับค่าจ้าง</option>
+                  <option value="emergency">ลาฉุกเฉิน</option>
+                  <option value="other">อื่นๆ</option>
+                </select>
+              </div>
+
+              <div class="leave-date-grid">
+                <div class="leave-form-group">
+                  <label for="leaveStartDate" class="leave-label">วันเริ่มลา</label>
+                  <input id="leaveStartDate" type="date" class="leave-input" required>
+                </div>
+
+                <div class="leave-form-group">
+                  <label for="leaveEndDate" class="leave-label">วันสิ้นสุดลา</label>
+                  <input id="leaveEndDate" type="date" class="leave-input" required>
+                </div>
+              </div>
+
+              <div class="leave-meta-row">
+                <div class="leave-meta-card">
+                  <span class="leave-meta-label">จำนวนวันลา</span>
+                  <span id="leaveTotalDays" class="leave-meta-value">0 วัน</span>
+                </div>
+
+                <div class="leave-meta-card">
+                  <span class="leave-meta-label">เงื่อนไข</span>
+                  <span id="leaveRuleHint" class="leave-meta-value leave-meta-value-small">เลือกประเภทการลา</span>
+                </div>
+              </div>
+
+              <div class="leave-form-group">
+                <label for="leaveNote" class="leave-label">หมายเหตุ</label>
+                <textarea
+                  id="leaveNote"
+                  class="leave-textarea"
+                  rows="4"
+                  placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"
+                ></textarea>
+                <p id="leaveNoteHint" class="leave-field-hint">ลาฉุกเฉินและอื่นๆ ต้องกรอกหมายเหตุ</p>
+              </div>
+
+              <div class="leave-form-group">
+                <label for="leaveAttachment" class="leave-label">แนบเอกสาร (ไม่บังคับ)</label>
+                <input id="leaveAttachment" type="file" class="leave-file-input" accept=".jpg,.jpeg,.png,.pdf">
+                <p id="leaveAttachmentName" class="leave-file-name">ยังไม่ได้เลือกไฟล์</p>
+              </div>
+
+              <button id="submitLeaveBtn" type="submit" class="leave-submit-btn">
+                ส่งคำขอลา
+              </button>
+            </form>
+          </div>
+
+          <div class="leave-card leave-history-card">
+            <div class="leave-card-header">
+              <h2>ประวัติการลา</h2>
+              <p>ดูสถานะคำขอลาย้อนหลัง</p>
+            </div>
+
+            <div id="leaveHistoryLoading" class="leave-history-loading">กำลังโหลดประวัติการลา...</div>
+            <div id="leaveHistoryList" class="leave-history-list"></div>
+          </div>
         </div>
       </section>
 
