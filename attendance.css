@@ -1059,4 +1059,31 @@ textarea {
     height: 82px;
     flex: 0 0 82px;
   }
+  /* ===== STEP 1: BUTTON PRESS FEEL ===== */
+
+  button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease;
+  }
+
+  button:active {
+  transform: scale(0.96);
+  }
+  /* ===== STEP 2 SAFE: HOME BUTTON EMPHASIS ===== */
+
+  .nav-btn-center {
+    box-shadow: 0 12px 26px rgba(11, 49, 136, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .nav-btn-center:active {
+    transform: scale(0.95);
+  }
+
+  /* ตอน active ให้ glow */
+  .nav-btn-center.active {
+   box-shadow:
+      0 14px 30px rgba(11, 49, 136, 0.4),
+      0 0 14px rgba(11, 49, 136, 0.35);
+  }
 }
