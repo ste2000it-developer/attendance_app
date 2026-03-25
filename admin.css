@@ -60,10 +60,12 @@ input {
 
 .admin-main {
   width: 100%;
+  min-width: 0;
 }
 
 .admin-section {
   display: none;
+  min-width: 0;
 }
 
 .admin-section.active {
@@ -74,6 +76,7 @@ input {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
+  min-width: 0;
 }
 
 .menu-card {
@@ -86,6 +89,7 @@ input {
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 0;
 }
 
 .menu-card:active {
@@ -118,6 +122,7 @@ input {
   border-radius: 24px;
   padding: 20px 16px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  min-width: 0;
 }
 
 .panel-header {
@@ -125,6 +130,7 @@ input {
   align-items: center;
   gap: 12px;
   margin-bottom: 18px;
+  min-width: 0;
 }
 
 .panel-header-space {
@@ -139,6 +145,7 @@ input {
   border-radius: 14px;
   padding: 10px 14px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .ghost-btn {
@@ -148,6 +155,7 @@ input {
   border-radius: 14px;
   padding: 10px 14px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .panel-title {
@@ -163,6 +171,7 @@ input {
 
 .panel-body {
   padding-top: 4px;
+  min-width: 0;
 }
 
 .panel-placeholder {
@@ -205,11 +214,13 @@ input {
   justify-content: flex-start;
   align-items: flex-end;
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .report-filter-group {
   width: 100%;
   max-width: 280px;
+  min-width: 0;
 }
 
 .report-filter-label {
@@ -221,7 +232,10 @@ input {
 }
 
 .report-month-input {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid #d9deea;
   border-radius: 16px;
   background: #ffffff;
@@ -229,6 +243,8 @@ input {
   color: #111111;
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .report-month-input:focus {
@@ -240,12 +256,15 @@ input {
   margin: 0 0 16px;
   font-size: 14px;
   color: #5f6c80;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .report-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 .report-empty {
@@ -263,6 +282,7 @@ input {
   border-radius: 20px;
   background: #fcfdff;
   overflow: hidden;
+  min-width: 0;
 }
 
 .report-employee-toggle {
@@ -272,6 +292,7 @@ input {
   text-align: left;
   padding: 16px 14px;
   cursor: pointer;
+  min-width: 0;
 }
 
 .report-employee-toggle:active {
@@ -283,6 +304,12 @@ input {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  min-width: 0;
+}
+
+.report-employee-header > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .report-employee-name {
@@ -290,6 +317,7 @@ input {
   font-size: 18px;
   font-weight: 600;
   color: #111111;
+  word-break: break-word;
 }
 
 .report-employee-sub {
@@ -297,6 +325,7 @@ input {
   font-size: 14px;
   color: #5f6c80;
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .report-mini-summary {
@@ -305,6 +334,7 @@ input {
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
+  min-width: 0;
 }
 
 .report-mini-badge {
@@ -312,12 +342,15 @@ input {
   align-items: center;
   justify-content: center;
   min-width: 72px;
+  max-width: 100%;
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   background: #edf2ff;
   color: #0b3188;
+  text-align: center;
+  word-break: break-word;
 }
 
 .report-toggle-row {
@@ -325,6 +358,7 @@ input {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .report-toggle-text {
@@ -337,6 +371,7 @@ input {
   font-size: 18px;
   color: #0b3188;
   transition: transform 0.18s ease;
+  flex-shrink: 0;
 }
 
 .report-employee-card.open .report-toggle-icon {
@@ -346,6 +381,7 @@ input {
 .report-employee-body {
   display: none;
   padding: 0 14px 16px;
+  min-width: 0;
 }
 
 .report-employee-card.open .report-employee-body {
@@ -353,12 +389,16 @@ input {
 }
 
 .report-table-wrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .report-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 680px;
   border-collapse: collapse;
 }
 
@@ -435,6 +475,7 @@ input {
 .approval-select-group {
   width: 100%;
   max-width: 320px;
+  min-width: 0;
 }
 
 .approval-select-label {
@@ -688,6 +729,7 @@ input {
 /* ===== HOLIDAYS ===== */
 .holiday-form {
   margin-bottom: 18px;
+  min-width: 0;
 }
 
 .holiday-form-grid {
@@ -695,12 +737,18 @@ input {
   grid-template-columns: 1fr 220px;
   gap: 12px;
   margin-bottom: 12px;
+  min-width: 0;
+}
+
+.holiday-form-grid > * {
+  min-width: 0;
 }
 
 .holiday-form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .holiday-label {
@@ -710,7 +758,10 @@ input {
 }
 
 .holiday-input {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid #d9deea;
   border-radius: 16px;
   background: #ffffff;
@@ -718,6 +769,8 @@ input {
   color: #111111;
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .holiday-input:focus {
@@ -732,6 +785,8 @@ input {
   color: #ffffff;
   padding: 14px 18px;
   cursor: pointer;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .holiday-list {
@@ -759,6 +814,12 @@ input {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+}
+
+.holiday-item > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .holiday-name {
@@ -766,12 +827,14 @@ input {
   font-size: 16px;
   font-weight: 600;
   color: #111111;
+  word-break: break-word;
 }
 
 .holiday-date {
   margin: 4px 0 0;
   font-size: 14px;
   color: #5f6c80;
+  word-break: break-word;
 }
 
 .holiday-delete-btn {
@@ -784,6 +847,7 @@ input {
   flex-shrink: 0;
 }
 
+/* ===== POPUP ===== */
 .admin-popup-overlay {
   position: fixed;
   inset: 0;
@@ -869,6 +933,24 @@ input {
   }
 }
 
+@media (max-width: 480px) {
+  .panel-header-space {
+    gap: 10px;
+  }
+
+  .report-table {
+    min-width: 620px;
+  }
+
+  .report-employee-toggle {
+    padding: 14px 12px;
+  }
+
+  .report-employee-body {
+    padding: 0 12px 14px;
+  }
+}
+
 @media (max-width: 420px) {
   .admin-app {
     padding: 20px 14px 28px;
@@ -929,5 +1011,21 @@ input {
 
   .holiday-delete-btn {
     width: 100%;
+  }
+
+  .holiday-save-btn {
+    width: 100%;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 9px 6px;
+    font-size: 13px;
+  }
+
+  .report-status-badge {
+    min-width: 70px;
+    padding: 5px 8px;
+    font-size: 11px;
   }
 }
