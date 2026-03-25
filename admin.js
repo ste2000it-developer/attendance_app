@@ -20,6 +20,12 @@ const openApprovalBtn = document.getElementById("openApprovalBtn");
 const backFromReportsBtn = document.getElementById("backFromReportsBtn");
 const backFromApprovalBtn = document.getElementById("backFromApprovalBtn");
 const refreshApprovalBtn = document.getElementById("refreshApprovalBtn");
+const loadReportBtn = document.getElementById("loadReportBtn");
+
+const reportMonthInput = document.getElementById("reportMonthInput");
+const reportRangeText = document.getElementById("reportRangeText");
+const reportLoading = document.getElementById("reportLoading");
+const reportList = document.getElementById("reportList");
 
 const approvalDropdown = document.getElementById("approvalDropdown");
 const approvalDropdownBtn = document.getElementById("approvalDropdownBtn");
@@ -84,6 +90,27 @@ function parseYmdToLocalDate(ymd) {
   return new Date(year, month - 1, day);
 }
 
+function getDateFromAny(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) return value;
+
+  if (typeof value?.toDate === "function") {
+    return value.toDate();
+  }
+
+  if (typeof value === "object" && typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000);
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
 function formatThaiDate(ymd) {
   const date = parseYmdToLocalDate(ymd);
   if (!date) return "-";
@@ -96,9 +123,9 @@ function formatThaiDate(ymd) {
 }
 
 function formatDateTimeThai(isoString) {
-  if (!isoString) return "-";
+  const date = getDateFromAny(isoString);
+  if (!date) return "-";
 
-  const date = new Date(isoString);
   return date.toLocaleString("th-TH", {
     day: "numeric",
     month: "short",
@@ -106,6 +133,43 @@ function formatDateTimeThai(isoString) {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function isSunday(date) {
+  return date.getDay() === 0;
+}
+
+function getDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getReportRangeFromMonth(monthValue) {
+  const [year, month] = monthValue.split("-").map(Number);
+  const start = new Date(year, month - 2, 25);
+  const end = new Date(year, month - 1, 24);
+  return { start, end };
+}
+
+function getDatesInRange(start, end) {
+  const dates = [];
+  const current = new Date(start);
+
+  while (current <= end) {
+    dates.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
+function setDefaultReportMonth() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  reportMonthInput.value = `${year}-${month}`;
 }
 
 function getApprovalStatusClass(status) {
@@ -118,6 +182,64 @@ function getApprovalStatusLabel(status) {
   if (status === "approved") return "อนุมัติแล้ว";
   if (status === "rejected") return "ไม่อนุมัติ";
   return "รออนุมัติ";
+}
+
+function getReportStatusClass(status) {
+  if (status === "ปกติ") return "report-status-normal";
+  if (status === "สาย") return "report-status-late";
+  if (status === "OT") return "report-status-ot";
+  if (status === "สาย + OT") return "report-status-late-ot";
+  if (status === "ลา") return "report-status-leave";
+  if (status === "วันหยุด") return "report-status-holiday";
+  return "report-status-none";
+}
+
+function formatOtMinutes(minutes) {
+  const safeMinutes = Math.max(0, Math.floor(minutes || 0));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainMinutes = safeMinutes % 60;
+
+  if (hours <= 0 && remainMinutes <= 0) {
+    return "0 ชม.";
+  }
+
+  if (remainMinutes === 0) {
+    return `${hours} ชม.`;
+  }
+
+  return `${hours} ชม. ${remainMinutes} นาที`;
+}
+
+function getOtMinutesForRecord(baseDate, attendanceRecord) {
+  if (!attendanceRecord?.checkOutTime) return 0;
+
+  const checkOutDate = getDateFromAny(attendanceRecord.checkOutTime);
+  if (!checkOutDate) return 0;
+
+  const otStart = new Date(baseDate);
+  const endOfDay = new Date(baseDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const nextDaySix = new Date(baseDate);
+  nextDaySix.setDate(nextDaySix.getDate() + 1);
+  nextDaySix.setHours(6, 0, 0, 0);
+
+  if (isSunday(baseDate)) {
+    otStart.setHours(8, 0, 0, 0);
+  } else {
+    otStart.setHours(18, 0, 0, 0);
+  }
+
+  let effectiveEnd = checkOutDate;
+
+  if (checkOutDate >= nextDaySix) {
+    effectiveEnd = endOfDay;
+  }
+
+  if (effectiveEnd <= otStart) return 0;
+
+  const diffMs = effectiveEnd.getTime() - otStart.getTime();
+  return Math.floor(diffMs / 60000);
 }
 
 function showPopup({
@@ -329,8 +451,8 @@ async function loadApprovalItems() {
         ...leaveDoc.data()
       }))
       .sort((a, b) => {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        const aTime = getDateFromAny(a.createdAt)?.getTime() || 0;
+        const bTime = getDateFromAny(b.createdAt)?.getTime() || 0;
         return bTime - aTime;
       });
 
@@ -427,6 +549,314 @@ function handleApprovalListClick(event) {
   }
 }
 
+/* ===== REPORT ===== */
+function buildReportRangeText(start, end) {
+  return `ช่วงรายงาน: ${formatThaiDate(getDateKey(start))} - ${formatThaiDate(getDateKey(end))}`;
+}
+
+function getLeaveDaysSet(items, start, end) {
+  const result = new Set();
+
+  items.forEach((item) => {
+    const leaveStart = parseYmdToLocalDate(item.startDate);
+    const leaveEnd = parseYmdToLocalDate(item.endDate);
+
+    if (!leaveStart || !leaveEnd) return;
+
+    const current = new Date(leaveStart);
+    while (current <= leaveEnd) {
+      if (current >= start && current <= end) {
+        result.add(getDateKey(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+  });
+
+  return result;
+}
+
+async function loadEmployeesForReport() {
+  const usersRef = collection(db, "users");
+  const snapshot = await getDocs(usersRef);
+
+  return snapshot.docs
+    .map((userDoc) => ({
+      id: userDoc.id,
+      ...userDoc.data()
+    }))
+    .filter((item) => item.role !== "admin" && (item.employeeId || item.id));
+}
+
+async function loadAttendanceDaysForEmployee(employeeCode) {
+  const daysRef = collection(db, "attendance", employeeCode, "days");
+  const snapshot = await getDocs(daysRef);
+
+  const map = new Map();
+
+  snapshot.docs.forEach((dayDoc) => {
+    map.set(dayDoc.id, dayDoc.data());
+  });
+
+  return map;
+}
+
+async function loadApprovedLeavesForUser(uid) {
+  const leaveRef = collection(db, "leaveRequests");
+  const q = query(leaveRef, where("uid", "==", uid));
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs
+    .map((leaveDoc) => ({
+      id: leaveDoc.id,
+      ...leaveDoc.data()
+    }))
+    .filter((item) => item.status === "approved");
+}
+
+function computeDayRow(date, attendanceRecord, approvedLeaveSet) {
+  const dateKey = getDateKey(date);
+
+  if (approvedLeaveSet.has(dateKey)) {
+    return {
+      dateKey,
+      status: "ลา",
+      checkIn: "-",
+      checkOut: "-",
+      siteIn: "-",
+      siteOut: "-",
+      note: "มีใบลาอนุมัติ",
+      otMinutes: 0
+    };
+  }
+
+  const hasAttendance = !!attendanceRecord?.checkInTime;
+
+  if (isSunday(date) && !hasAttendance) {
+    return {
+      dateKey,
+      status: "วันหยุด",
+      checkIn: "-",
+      checkOut: "-",
+      siteIn: "-",
+      siteOut: "-",
+      note: "วันอาทิตย์",
+      otMinutes: 0
+    };
+  }
+
+  if (!attendanceRecord || !attendanceRecord.checkInTime) {
+    return {
+      dateKey,
+      status: "-",
+      checkIn: "-",
+      checkOut: "-",
+      siteIn: "-",
+      siteOut: "-",
+      note: "-",
+      otMinutes: 0
+    };
+  }
+
+  const otMinutes = getOtMinutesForRecord(date, attendanceRecord);
+  const isLate = !isSunday(date) && attendanceRecord.checkInStatus === "สาย";
+  const hasOt = otMinutes > 0;
+
+  let status = "ปกติ";
+
+  if (isSunday(date)) {
+    status = hasOt ? "OT" : "วันหยุด";
+  } else if (isLate && hasOt) {
+    status = "สาย + OT";
+  } else if (isLate) {
+    status = "สาย";
+  } else if (hasOt) {
+    status = "OT";
+  }
+
+  let note = attendanceRecord.autoCheckedOut ? "ตัดอัตโนมัติ" : "-";
+
+  if (otMinutes > 0) {
+    note = note === "-" ? `OT ${formatOtMinutes(otMinutes)}` : `${note} · OT ${formatOtMinutes(otMinutes)}`;
+  }
+
+  return {
+    dateKey,
+    status,
+    checkIn: attendanceRecord.checkInLabel || "-",
+    checkOut: attendanceRecord.checkOutLabel || "-",
+    siteIn: attendanceRecord.siteIn || "-",
+    siteOut: attendanceRecord.siteOut || "-",
+    note,
+    otMinutes
+  };
+}
+
+function renderReport(reportItems) {
+  if (!reportItems.length) {
+    reportList.innerHTML = `<div class="report-empty">ไม่พบข้อมูลพนักงานสำหรับรายงาน</div>`;
+    return;
+  }
+
+  reportList.innerHTML = reportItems
+    .map((employee, index) => {
+      const rowsHtml = employee.rows
+        .map((row) => {
+          return `
+            <tr>
+              <td>${escapeHtml(formatThaiDate(row.dateKey))}</td>
+              <td>
+                <span class="report-status-badge ${getReportStatusClass(row.status)}">
+                  ${escapeHtml(row.status)}
+                </span>
+              </td>
+              <td>${escapeHtml(row.checkIn)}</td>
+              <td>${escapeHtml(row.checkOut)}</td>
+              <td>${escapeHtml(row.siteIn)}</td>
+              <td>${escapeHtml(row.siteOut)}</td>
+              <td>${escapeHtml(row.note)}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      return `
+        <div class="report-employee-card" data-report-card="${index}">
+          <button class="report-employee-toggle" type="button" data-report-toggle="${index}">
+            <div class="report-employee-header">
+              <div>
+                <p class="report-employee-name">${escapeHtml(employee.name)}</p>
+                <p class="report-employee-sub">
+                  รหัส: ${escapeHtml(employee.employeeCode)} · แผนก: ${escapeHtml(employee.department)} · ตำแหน่ง: ${escapeHtml(employee.position)}
+                </p>
+              </div>
+
+              <div class="report-mini-summary">
+                <span class="report-mini-badge">มาสาย ${employee.lateCount}</span>
+                <span class="report-mini-badge">OT ${escapeHtml(formatOtMinutes(employee.otMinutes))}</span>
+                <span class="report-mini-badge">ลา ${employee.leaveCount}</span>
+              </div>
+            </div>
+
+            <div class="report-toggle-row">
+              <span class="report-toggle-text">กดเพื่อดูรายละเอียดรายวัน</span>
+              <span class="report-toggle-icon">⌄</span>
+            </div>
+          </button>
+
+          <div class="report-employee-body">
+            <div class="report-table-wrap">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>วันที่</th>
+                    <th>สถานะ</th>
+                    <th>เข้างาน</th>
+                    <th>ออกงาน</th>
+                    <th>Site In</th>
+                    <th>Site Out</th>
+                    <th>หมายเหตุ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function bindReportCardToggle() {
+  const toggleButtons = Array.from(document.querySelectorAll("[data-report-toggle]"));
+
+  toggleButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = button.dataset.reportToggle;
+      const card = document.querySelector(`[data-report-card="${index}"]`);
+      if (!card) return;
+      card.classList.toggle("open");
+    });
+  });
+}
+
+async function loadReport() {
+  const monthValue = reportMonthInput.value;
+
+  if (!monthValue) {
+    reportLoading.style.display = "block";
+    reportLoading.textContent = "กรุณาเลือกเดือนก่อน";
+    reportList.innerHTML = "";
+    return;
+  }
+
+  reportLoading.style.display = "block";
+  reportLoading.textContent = "กำลังโหลดรายงาน...";
+  reportList.innerHTML = "";
+
+  try {
+    const { start, end } = getReportRangeFromMonth(monthValue);
+    reportRangeText.textContent = buildReportRangeText(start, end);
+
+    const users = await loadEmployeesForReport();
+    const dates = getDatesInRange(start, end);
+
+    const reportItems = [];
+
+    for (const user of users) {
+      const employeeCode = user.employeeId || user.id;
+      const attendanceMap = await loadAttendanceDaysForEmployee(employeeCode);
+      const approvedLeaves = await loadApprovedLeavesForUser(user.uid);
+      const approvedLeaveSet = getLeaveDaysSet(approvedLeaves, start, end);
+
+      let lateCount = 0;
+      let otMinutes = 0;
+      let leaveCount = 0;
+
+      const rows = dates.map((date) => {
+        const row = computeDayRow(date, attendanceMap.get(getDateKey(date)), approvedLeaveSet);
+
+        if (row.status === "สาย" || row.status === "สาย + OT") {
+          lateCount += 1;
+        }
+
+        if (row.otMinutes > 0) {
+          otMinutes += row.otMinutes;
+        }
+
+        if (row.status === "ลา") {
+          leaveCount += 1;
+        }
+
+        return row;
+      });
+
+      reportItems.push({
+        employeeCode,
+        name: user.nameTH || user.fullName || user.name || "-",
+        department: user.departmentTH || user.department || "-",
+        position: user.positionTH || user.position || "-",
+        lateCount,
+        otMinutes,
+        leaveCount,
+        rows
+      });
+    }
+
+    renderReport(reportItems);
+    bindReportCardToggle();
+
+    reportLoading.style.display = "none";
+  } catch (error) {
+    console.error(error);
+    reportLoading.style.display = "block";
+    reportLoading.textContent = "โหลดรายงานไม่สำเร็จ";
+    reportList.innerHTML = "";
+  }
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.replace("./index.html");
@@ -445,6 +875,7 @@ onAuthStateChanged(auth, async (user) => {
     currentView = "pending";
     syncDropdownUI();
     closeDropdown();
+    setDefaultReportMonth();
 
     showSection(adminHomeSection);
     await loadApprovalItems();
@@ -476,6 +907,10 @@ refreshApprovalBtn.addEventListener("click", async () => {
   await loadApprovalItems();
 });
 
+loadReportBtn.addEventListener("click", async () => {
+  await loadReport();
+});
+
 approvalDropdownBtn.addEventListener("click", (event) => {
   event.stopPropagation();
 
@@ -487,7 +922,7 @@ approvalDropdownBtn.addEventListener("click", (event) => {
 });
 
 approvalDropdownItems.forEach((item) => {
-  item.addEventListener("click", async () => {
+  item.addEventListener("click", () => {
     currentView = item.dataset.view || "pending";
     syncDropdownUI();
     closeDropdown();
