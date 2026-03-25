@@ -1086,4 +1086,50 @@ textarea {
       0 14px 30px rgba(11, 49, 136, 0.4),
       0 0 14px rgba(11, 49, 136, 0.35);
   }
+
+  /* ===== HOLIDAY CARD ===== */
+.holiday-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.holiday-card-header {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.holiday-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.holiday-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f6f7fb;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.holiday-name {
+  font-weight: 500;
+}
+
+.holiday-date {
+  color: #666;
+  font-size: 12px;
+}
+
+.holiday-empty {
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+}
 }

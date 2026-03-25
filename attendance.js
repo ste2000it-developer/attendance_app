@@ -62,6 +62,7 @@ const leaveTotalDays = document.getElementById("leaveTotalDays");
 const submitLeaveBtn = document.getElementById("submitLeaveBtn");
 const leaveHistoryLoading = document.getElementById("leaveHistoryLoading");
 const leaveHistoryList = document.getElementById("leaveHistoryList");
+const holidayListEl = document.getElementById("holidayList");
 
 const ADMIN_PIN = "1234";
 const LEAVE_ATTACHMENT_MAX_MB = 2;
@@ -119,6 +120,27 @@ const LEAVE_TYPES = {
   }
 };
 
+/* =========================
+   🔹 วันหยุดไทยแบบวันที่คงที่ทุกปี
+========================= */
+const FIXED_THAI_HOLIDAYS = {
+  "01-01": "วันขึ้นปีใหม่",
+  "04-06": "วันจักรี",
+  "04-13": "วันสงกรานต์",
+  "04-14": "วันสงกรานต์",
+  "04-15": "วันสงกรานต์",
+  "05-01": "วันแรงงาน",
+  "05-04": "วันฉัตรมงคล",
+  "06-03": "วันเฉลิมพระชนมพรรษาพระราชินี",
+  "07-28": "วันเฉลิมพระชนมพรรษา ร.10",
+  "08-12": "วันแม่",
+  "10-13": "วันนวมินทรมหาราช",
+  "10-23": "วันปิยมหาราช",
+  "12-05": "วันพ่อ",
+  "12-10": "วันรัฐธรรมนูญ",
+  "12-31": "วันสิ้นปี"
+};
+
 let currentRecord = null;
 let currentEmployeeCode = null;
 let currentEmployeeName = null;
@@ -133,6 +155,9 @@ let watchId = null;
 
 let cachedSites = [];
 let sitesLoaded = false;
+let cachedCompanyHolidays = [];
+let companyHolidaysLoaded = false;
+
 let isActionRunning = false;
 let isAppReady = false;
 let isAutoCheckoutRunning = false;
@@ -684,6 +709,147 @@ function updateAttachmentNameUI() {
   leaveAttachmentName.textContent = file ? file.name : "ยังไม่ได้เลือกไฟล์";
 }
 
+/* =========================
+   🔹 วันหยุด: helper
+========================= */
+function formatYmd(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getMonthDayKey(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${month}-${day}`;
+}
+
+function getFixedThaiHolidayName(date) {
+  return FIXED_THAI_HOLIDAYS[getMonthDayKey(date)] || null;
+}
+
+async function loadCompanyHolidays() {
+  if (companyHolidaysLoaded) {
+    return;
+  }
+
+  const holidaysRef = collection(db, "holidays");
+  const snapshot = await getDocs(holidaysRef);
+
+  cachedCompanyHolidays = snapshot.docs.map((holidayDoc) => {
+    const data = holidayDoc.data();
+    return {
+      id: holidayDoc.id,
+      name: data.name || "",
+      date: data.date || holidayDoc.id
+    };
+  });
+
+  companyHolidaysLoaded = true;
+}
+
+function getCompanyHolidayName(date) {
+  const ymd = formatYmd(date);
+  const found = cachedCompanyHolidays.find((item) => item.date === ymd);
+  return found ? found.name || "วันหยุดบริษัท" : null;
+}
+function generateUpcomingHolidays() {
+  const today = new Date();
+  const result = [];
+
+  for (let i = 0; i < 30; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() + i);
+
+    const ymd = formatYmd(d);
+
+    // 1. วันหยุดบริษัท
+    const company = getCompanyHolidayName(d);
+    if (company) {
+      result.push({
+        name: company,
+        date: ymd
+      });
+      continue;
+    }
+
+    // 2. วันหยุดไทย
+    const thai = getFixedThaiHolidayName(d);
+    if (thai) {
+      result.push({
+        name: thai,
+        date: ymd
+      });
+    }
+  }
+
+  return result;
+}
+
+function renderHolidayList() {
+  if (!holidayListEl) return;
+
+  const holidays = generateUpcomingHolidays();
+
+  if (!holidays.length) {
+    holidayListEl.innerHTML = `
+      <div class="holiday-empty">ไม่มีวันหยุดเร็ว ๆ นี้</div>
+    `;
+    return;
+  }
+
+  holidayListEl.innerHTML = holidays.map(h => `
+    <div class="holiday-item">
+      <span class="holiday-name">${h.name}</span>
+      <span class="holiday-date">${formatThaiDate(h.date)}</span>
+    </div>
+  `).join("");
+}
+
+function getHolidayConflictName(date) {
+
+  const companyHolidayName = getCompanyHolidayName(date);
+  if (companyHolidayName) {
+    return companyHolidayName;
+  }
+
+  const fixedThaiHolidayName = getFixedThaiHolidayName(date);
+  if (fixedThaiHolidayName) {
+    return fixedThaiHolidayName;
+  }
+
+  return null;
+}
+
+function getLeaveHolidayConflicts(startYmd, endYmd) {
+  const start = parseYmdToLocalDate(startYmd);
+  const end = parseYmdToLocalDate(endYmd);
+
+  if (!start || !end || end < start) {
+    return [];
+  }
+
+  const conflicts = [];
+  const current = new Date(start);
+
+  while (current <= end) {
+    const holidayName = getHolidayConflictName(current);
+
+    if (holidayName) {
+      conflicts.push({
+        dateYmd: formatYmd(current),
+        dateLabel: formatThaiDate(formatYmd(current)),
+        holidayName
+      });
+    }
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return conflicts;
+}
+
 function validateLeaveForm() {
   const leaveType = leaveTypeSelect.value;
   const startDate = leaveStartDate.value;
@@ -728,6 +894,16 @@ function validateLeaveForm() {
     if (start < minAdvanceDate) {
       return "ประเภทการลานี้ต้องยื่นลาล่วงหน้าอย่างน้อย 1 วัน";
     }
+  }
+
+  const holidayConflicts = getLeaveHolidayConflicts(startDate, endDate);
+
+  if (holidayConflicts.length > 0) {
+    const lines = holidayConflicts
+      .map((item) => `• ${item.dateLabel} (${item.holidayName})`)
+      .join("\n");
+
+    return `ไม่สามารถลาทับวันหยุดได้\n${lines}`;
   }
 
   if (file) {
@@ -872,7 +1048,7 @@ async function handleLeaveSubmit(event) {
 
   if (validationError) {
     showPopup({
-      title: "กรอกข้อมูลไม่ครบ",
+      title: "เกิดข้อผิดพลาด",
       message: validationError,
       mode: "alert",
       confirmText: "ตกลง"
@@ -921,7 +1097,8 @@ async function handleLeaveSubmit(event) {
 
     resetLeaveForm();
     await loadLeaveHistory();
-
+    renderHolidayList();
+    
     updatePopupToSuccess("ส่งคำขอสำเร็จ", "ระบบบันทึกใบลาของคุณเรียบร้อยแล้ว");
   } catch (error) {
     console.error(error);
@@ -1426,6 +1603,7 @@ function setActiveSection(sectionName) {
   if (sectionName === "leave") {
     leaveSection.classList.add("active");
     leaveTabBtn.classList.add("active");
+    renderHolidayList();
     void loadLeaveHistory();
   }
 }
@@ -1659,6 +1837,10 @@ onAuthStateChanged(auth, async (user) => {
       setAppLoading("กำลังโหลดข้อมูลการลา...");
       await loadLeaveHistory();
     }
+
+    setAppLoading("กำลังโหลดวันหยุด...");
+    await loadCompanyHolidays();
+    renderHolidayList();
 
     setAppLoading("กำลังตรวจตำแหน่งปัจจุบัน...");
     await refreshCurrentLiveLocationOnce();
