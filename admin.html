@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Admin Panel</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0b3188" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+
+  <link rel="stylesheet" href="./admin.css" />
+</head>
+<body>
+  <div class="admin-app">
+
+    <header class="admin-header">
+      <div class="admin-header-text">
+        <p class="admin-kicker">S.TUNTIVIVAT ENGINEERING 2000 CO.,LTD.</p>
+        <h1 class="admin-title">แผงควบคุมแอดมิน</h1>
+        <p class="admin-subtitle">เลือกเมนูที่ต้องการใช้งาน</p>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <section id="adminHomeSection" class="admin-section active">
+        <div class="menu-grid">
+          <button id="openReportsBtn" class="menu-card" type="button">
+            <div class="menu-card-icon">📊</div>
+            <h2 class="menu-card-title">Reports</h2>
+            <p class="menu-card-text">
+              ดูรายงานการเข้างาน สรุปข้อมูล และตรวจข้อมูลรายเดือน
+            </p>
+          </button>
+
+          <button id="openApprovalBtn" class="menu-card" type="button">
+            <div class="menu-card-icon">📝</div>
+            <h2 class="menu-card-title">ใบลารออนุมัติ</h2>
+            <p class="menu-card-text">
+              ตรวจสอบรายการลา อนุมัติ ปฏิเสธ และดูประวัติย้อนหลัง
+            </p>
+          </button>
+        </div>
+      </section>
+
+      <section id="reportsSection" class="admin-section">
+        <div class="panel-card">
+          <div class="panel-header">
+            <button id="backFromReportsBtn" class="back-btn" type="button">
+              ← กลับ
+            </button>
+            <h2 class="panel-title">Reports</h2>
+          </div>
+
+          <div class="panel-body">
+            <p class="panel-placeholder">
+              หน้านี้จะใช้สำหรับดูรายงาน attendance ในขั้นถัดไป
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="approvalSection" class="admin-section">
+        <div class="panel-card">
+          <div class="panel-header panel-header-space">
+            <div>
+              <button id="backFromApprovalBtn" class="back-btn" type="button">
+                ← กลับ
+              </button>
+              <h2 class="panel-title panel-title-with-back">จัดการใบลา</h2>
+            </div>
+
+            <button id="refreshApprovalBtn" class="ghost-btn" type="button">
+              รีเฟรช
+            </button>
+          </div>
+
+          <div class="panel-body">
+
+            <div class="approval-toolbar">
+              <div class="approval-select-group">
+                <label class="approval-select-label">ดูรายการใบลา</label>
+
+                <div id="approvalDropdown" class="custom-dropdown">
+                  <button
+                    id="approvalDropdownBtn"
+                    class="custom-dropdown-btn"
+                    type="button"
+                    aria-expanded="false"
+                  >
+                    <span id="approvalDropdownLabel">รออนุมัติ</span>
+                    <span class="custom-dropdown-arrow">⌄</span>
+                  </button>
+
+                  <div id="approvalDropdownMenu" class="custom-dropdown-menu hidden">
+                    <button class="custom-dropdown-item active" type="button" data-view="pending">
+                      รออนุมัติ
+                    </button>
+                    <button class="custom-dropdown-item" type="button" data-view="all">
+                      ทั้งหมด
+                    </button>
+                    <button class="custom-dropdown-item" type="button" data-view="approved">
+                      อนุมัติแล้ว
+                    </button>
+                    <button class="custom-dropdown-item" type="button" data-view="rejected">
+                      ไม่อนุมัติ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="approval-summary-grid">
+              <div class="summary-card">
+                <span class="summary-label">รออนุมัติ</span>
+                <strong id="pendingCount" class="summary-value">0</strong>
+              </div>
+
+              <div class="summary-card">
+                <span class="summary-label">อนุมัติแล้ว</span>
+                <strong id="approvedCount" class="summary-value">0</strong>
+              </div>
+
+              <div class="summary-card">
+                <span class="summary-label">ไม่อนุมัติ</span>
+                <strong id="rejectedCount" class="summary-value">0</strong>
+              </div>
+            </div>
+
+            <div id="approvalLoading" class="approval-loading">
+              กำลังโหลดรายการใบลา...
+            </div>
+
+            <div id="approvalList" class="approval-list"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="adminPopupOverlay" class="admin-popup-overlay hidden">
+    <div class="admin-popup-card">
+      <p id="adminPopupTitle" class="admin-popup-title">ยืนยันรายการ</p>
+      <p id="adminPopupMessage" class="admin-popup-message">ข้อความ</p>
+
+      <div class="admin-popup-actions">
+        <button id="adminPopupCancelBtn" class="admin-popup-btn admin-popup-btn-secondary" type="button">
+          ยกเลิก
+        </button>
+        <button id="adminPopupConfirmBtn" class="admin-popup-btn admin-popup-btn-primary" type="button">
+          ตกลง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>

@@ -27,6 +27,8 @@ const passwordGroup = document.getElementById("passwordGroup");
 
 let isPasswordVisible = false;
 
+/* ================= DEVICE ================= */
+
 function getDeviceId() {
   let deviceId = localStorage.getItem("deviceId");
 
@@ -36,13 +38,14 @@ function getDeviceId() {
       Date.now().toString(36) +
       "-" +
       Math.random().toString(36).slice(2, 10);
+
     localStorage.setItem("deviceId", deviceId);
   }
 
   return deviceId;
 }
 
-// 🔥 หา user doc จาก uid
+// หา user doc จาก uid
 async function getUserDoc(user) {
   const usersRef = collection(db, "users");
   const q = query(usersRef, where("uid", "==", user.uid));
@@ -52,14 +55,12 @@ async function getUserDoc(user) {
     throw new Error("USER_PROFILE_NOT_FOUND");
   }
 
-  return snapshot.docs[0]; // <-- ตัวนี้สำคัญ (มี id = IT00001)
+  return snapshot.docs[0];
 }
 
-// 🔥 ตรวจ device
-async function validateDevice(user) {
-  const userDoc = await getUserDoc(user);
+// ตรวจ device (ใช้เฉพาะ user ปกติ)
+async function validateDeviceForNormalUser(userDoc) {
   const userData = userDoc.data();
-
   const currentDeviceId = getDeviceId();
 
   // ยังไม่ผูกเครื่อง
@@ -86,38 +87,51 @@ async function validateDevice(user) {
   return false;
 }
 
-// 🔥 เช็ค session
+/* ================= AUTH FLOW ================= */
+
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    try {
-      const ok = await validateDevice(user);
+  if (!user) {
+    document.body.style.display = "block";
+    return;
+  }
 
-      if (!ok) {
-        await signOut(auth);
-        showError("บัญชีนี้ถูกใช้งานบนเครื่องอื่น");
-        document.body.style.display = "block";
-        return;
-      }
+  try {
+    const userDoc = await getUserDoc(user);
+    const userData = userDoc.data();
+    const role = userData.role || "";
 
-      window.location.replace("./attendance.html");
-
-    } catch (error) {
-      console.error(error);
-
-      if (error.message === "USER_PROFILE_NOT_FOUND") {
-        showError("ไม่พบข้อมูลผู้ใช้ในระบบ");
-      } else {
-        showError("เกิดข้อผิดพลาด");
-      }
-
-      document.body.style.display = "block";
+    // ✅ ADMIN = ข้าม device lock
+    if (role === "admin") {
+      window.location.replace("./admin.html");
+      return;
     }
-  } else {
+
+    // ✅ USER ปกติ = ตรวจ device เหมือนเดิม
+    const ok = await validateDeviceForNormalUser(userDoc);
+
+    if (!ok) {
+      await signOut(auth);
+      showError("บัญชีนี้ถูกใช้งานบนเครื่องอื่น");
+      document.body.style.display = "block";
+      return;
+    }
+
+    window.location.replace("./attendance.html");
+  } catch (error) {
+    console.error(error);
+
+    if (error.message === "USER_PROFILE_NOT_FOUND") {
+      showError("ไม่พบข้อมูลผู้ใช้ในระบบ");
+    } else {
+      showError("เกิดข้อผิดพลาด");
+    }
+
     document.body.style.display = "block";
   }
 });
 
-// ================= UI =================
+/* ================= UI ================= */
+
 function updateFloatingState(inputElement, groupElement) {
   const hasValue = inputElement.value.trim() !== "";
   const isFocused = document.activeElement === inputElement;
@@ -170,6 +184,8 @@ function getFriendlyFirebaseError(errorCode) {
 bindFloatingInput(emailInput, emailGroup);
 bindFloatingInput(passwordInput, passwordGroup);
 
+/* ================= PASSWORD TOGGLE ================= */
+
 togglePasswordBtn.addEventListener("click", () => {
   isPasswordVisible = !isPasswordVisible;
 
@@ -178,7 +194,8 @@ togglePasswordBtn.addEventListener("click", () => {
   eyeOffIcon.classList.toggle("hidden");
 });
 
-// 🔥 LOGIN
+/* ================= LOGIN ================= */
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
