@@ -28,6 +28,7 @@
 
     <main class="admin-main">
 
+      <!-- HOME -->
       <section id="adminHomeSection" class="admin-section active">
         <div class="menu-grid">
           <button id="openReportsBtn" class="menu-card" type="button">
@@ -45,9 +46,18 @@
               ตรวจสอบรายการลา อนุมัติ ปฏิเสธ และดูประวัติย้อนหลัง
             </p>
           </button>
+
+          <button id="openHolidaysBtn" class="menu-card" type="button">
+            <div class="menu-card-icon">🎉</div>
+            <h2 class="menu-card-title">วันหยุดบริษัท</h2>
+            <p class="menu-card-text">
+              เพิ่ม แก้ไข และลบวันหยุดบริษัทสำหรับใช้ในระบบรายงาน
+            </p>
+          </button>
         </div>
       </section>
 
+      <!-- REPORTS -->
       <section id="reportsSection" class="admin-section">
         <div class="panel-card">
           <div class="panel-header panel-header-space">
@@ -82,6 +92,7 @@
         </div>
       </section>
 
+      <!-- APPROVAL -->
       <section id="approvalSection" class="admin-section">
         <div class="panel-card">
           <div class="panel-header panel-header-space">
@@ -153,6 +164,59 @@
             </div>
 
             <div id="approvalList" class="approval-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOLIDAYS -->
+      <section id="holidaysSection" class="admin-section">
+        <div class="panel-card">
+          <div class="panel-header panel-header-space">
+            <div>
+              <button id="backFromHolidaysBtn" class="back-btn" type="button">
+                ← กลับ
+              </button>
+              <h2 class="panel-title panel-title-with-back">วันหยุดบริษัท</h2>
+            </div>
+
+            <button id="refreshHolidaysBtn" class="ghost-btn" type="button">
+              รีเฟรช
+            </button>
+          </div>
+
+          <div class="panel-body">
+            <form id="holidayForm" class="holiday-form">
+              <div class="holiday-form-grid">
+                <div class="holiday-form-group">
+                  <label for="holidayNameInput" class="holiday-label">ชื่อวันหยุด</label>
+                  <input
+                    id="holidayNameInput"
+                    class="holiday-input"
+                    type="text"
+                    placeholder="เช่น วันหยุดชดเชย"
+                  />
+                </div>
+
+                <div class="holiday-form-group">
+                  <label for="holidayDateInput" class="holiday-label">วันที่</label>
+                  <input
+                    id="holidayDateInput"
+                    class="holiday-input"
+                    type="date"
+                  />
+                </div>
+              </div>
+
+              <button id="saveHolidayBtn" class="holiday-save-btn" type="submit">
+                บันทึกวันหยุด
+              </button>
+            </form>
+
+            <div id="holidayLoading" class="approval-loading">
+              กำลังโหลดวันหยุด...
+            </div>
+
+            <div id="holidayList" class="holiday-list"></div>
           </div>
         </div>
       </section>

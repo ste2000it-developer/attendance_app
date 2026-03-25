@@ -2,8 +2,10 @@ import {
   auth,
   db,
   doc,
+  setDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   collection,
   query,
   where,
@@ -14,12 +16,18 @@ import {
 const adminHomeSection = document.getElementById("adminHomeSection");
 const reportsSection = document.getElementById("reportsSection");
 const approvalSection = document.getElementById("approvalSection");
+const holidaysSection = document.getElementById("holidaysSection");
 
 const openReportsBtn = document.getElementById("openReportsBtn");
 const openApprovalBtn = document.getElementById("openApprovalBtn");
+const openHolidaysBtn = document.getElementById("openHolidaysBtn");
+
 const backFromReportsBtn = document.getElementById("backFromReportsBtn");
 const backFromApprovalBtn = document.getElementById("backFromApprovalBtn");
+const backFromHolidaysBtn = document.getElementById("backFromHolidaysBtn");
+
 const refreshApprovalBtn = document.getElementById("refreshApprovalBtn");
+const refreshHolidaysBtn = document.getElementById("refreshHolidaysBtn");
 const loadReportBtn = document.getElementById("loadReportBtn");
 
 const reportMonthInput = document.getElementById("reportMonthInput");
@@ -39,6 +47,12 @@ const rejectedCountEl = document.getElementById("rejectedCount");
 const approvalLoadingEl = document.getElementById("approvalLoading");
 const approvalListEl = document.getElementById("approvalList");
 
+const holidayForm = document.getElementById("holidayForm");
+const holidayNameInput = document.getElementById("holidayNameInput");
+const holidayDateInput = document.getElementById("holidayDateInput");
+const holidayLoading = document.getElementById("holidayLoading");
+const holidayList = document.getElementById("holidayList");
+
 const adminPopupOverlay = document.getElementById("adminPopupOverlay");
 const adminPopupTitle = document.getElementById("adminPopupTitle");
 const adminPopupMessage = document.getElementById("adminPopupMessage");
@@ -46,6 +60,7 @@ const adminPopupCancelBtn = document.getElementById("adminPopupCancelBtn");
 const adminPopupConfirmBtn = document.getElementById("adminPopupConfirmBtn");
 
 let approvalItems = [];
+let holidayItems = [];
 let isApprovalActionRunning = false;
 let currentView = "pending";
 
@@ -56,10 +71,31 @@ const viewLabelMap = {
   rejected: "ไม่อนุมัติ"
 };
 
+// วันหยุดไทยแบบ "วันที่คงที่ทุกปี"
+// วันลอยตัว/วันจันทรคติ/วันหยุดพิเศษ ให้เพิ่มผ่าน holidays collection
+const FIXED_THAI_HOLIDAYS = {
+  "01-01": "วันขึ้นปีใหม่",
+  "04-06": "วันจักรี",
+  "04-13": "วันสงกรานต์",
+  "04-14": "วันสงกรานต์",
+  "04-15": "วันสงกรานต์",
+  "05-01": "วันแรงงานแห่งชาติ",
+  "05-04": "วันฉัตรมงคล",
+  "06-03": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี",
+  "07-28": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+  "08-12": "วันแม่แห่งชาติ",
+  "10-13": "วันนวมินทรมหาราช",
+  "10-23": "วันปิยมหาราช",
+  "12-05": "วันพ่อแห่งชาติ",
+  "12-10": "วันรัฐธรรมนูญ",
+  "12-31": "วันสิ้นปี"
+};
+
 function showSection(sectionToShow) {
   adminHomeSection.classList.remove("active");
   reportsSection.classList.remove("active");
   approvalSection.classList.remove("active");
+  holidaysSection.classList.remove("active");
   sectionToShow.classList.add("active");
 }
 
@@ -144,6 +180,16 @@ function getDateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function getMonthDayKey(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${month}-${day}`;
+}
+
+function getFixedThaiHolidayLabel(date) {
+  return FIXED_THAI_HOLIDAYS[getMonthDayKey(date)] || null;
 }
 
 function getReportRangeFromMonth(monthValue) {
@@ -277,6 +323,7 @@ function hidePopup() {
   adminPopupOverlay.classList.add("hidden");
 }
 
+/* ===== APPROVAL ===== */
 function updateApprovalSummary(items) {
   const pending = items.filter((item) => item.status === "pending").length;
   const approved = items.filter((item) => item.status === "approved").length;
@@ -503,9 +550,7 @@ async function updateLeaveStatus(leaveId, newStatus) {
       message: "อัปเดตสถานะใบลาไม่สำเร็จ",
       confirmText: "ตกลง",
       hideCancel: true,
-      onConfirm: () => {
-        hidePopup();
-      }
+      onConfirm: hidePopup
     });
   } finally {
     isApprovalActionRunning = false;
@@ -549,6 +594,165 @@ function handleApprovalListClick(event) {
   }
 }
 
+/* ===== HOLIDAYS ===== */
+function renderHolidayList(items) {
+  if (!items.length) {
+    holidayList.innerHTML = `<div class="holiday-empty">ยังไม่มีวันหยุดบริษัท</div>`;
+    return;
+  }
+
+  holidayList.innerHTML = items
+    .map((item) => {
+      return `
+        <div class="holiday-item">
+          <div>
+            <p class="holiday-name">${escapeHtml(item.name || "-")}</p>
+            <p class="holiday-date">${escapeHtml(formatThaiDate(item.date))}</p>
+          </div>
+
+          <button
+            class="holiday-delete-btn"
+            type="button"
+            data-holiday-id="${escapeHtml(item.id)}"
+            data-holiday-name="${escapeHtml(item.name || "")}"
+          >
+            ลบ
+          </button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function loadHolidays() {
+  holidayLoading.style.display = "block";
+  holidayLoading.textContent = "กำลังโหลดวันหยุด...";
+  holidayList.innerHTML = "";
+
+  try {
+    const holidaysRef = collection(db, "holidays");
+    const snapshot = await getDocs(holidaysRef);
+
+    holidayItems = snapshot.docs
+      .map((holidayDoc) => ({
+        id: holidayDoc.id,
+        ...holidayDoc.data()
+      }))
+      .sort((a, b) => {
+        const aDate = a.date || "";
+        const bDate = b.date || "";
+        return aDate.localeCompare(bDate);
+      });
+
+    renderHolidayList(holidayItems);
+    holidayLoading.style.display = "none";
+  } catch (error) {
+    console.error(error);
+    holidayLoading.style.display = "block";
+    holidayLoading.textContent = "โหลดวันหยุดไม่สำเร็จ";
+    holidayList.innerHTML = "";
+  }
+}
+
+async function saveHoliday(event) {
+  event.preventDefault();
+
+  const name = holidayNameInput.value.trim();
+  const date = holidayDateInput.value;
+
+  if (!name || !date) {
+    showPopup({
+      title: "ข้อมูลไม่ครบ",
+      message: "กรุณากรอกชื่อวันหยุดและวันที่ให้ครบ",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+    return;
+  }
+
+  try {
+    const holidayId = date;
+
+    await setDoc(
+      doc(db, "holidays", holidayId),
+      {
+        name,
+        date,
+        updatedAt: new Date().toISOString()
+      },
+      { merge: true }
+    );
+
+    holidayNameInput.value = "";
+    holidayDateInput.value = "";
+
+    showPopup({
+      title: "สำเร็จ",
+      message: "บันทึกวันหยุดเรียบร้อยแล้ว",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: async () => {
+        hidePopup();
+        await loadHolidays();
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    showPopup({
+      title: "ผิดพลาด",
+      message: "บันทึกวันหยุดไม่สำเร็จ",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+  }
+}
+
+async function deleteHoliday(holidayId) {
+  try {
+    await deleteDoc(doc(db, "holidays", holidayId));
+
+    showPopup({
+      title: "สำเร็จ",
+      message: "ลบวันหยุดเรียบร้อยแล้ว",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: async () => {
+        hidePopup();
+        await loadHolidays();
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    showPopup({
+      title: "ผิดพลาด",
+      message: "ลบวันหยุดไม่สำเร็จ",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+  }
+}
+
+function handleHolidayListClick(event) {
+  const deleteBtn = event.target.closest("[data-holiday-id]");
+  if (!deleteBtn) return;
+
+  const holidayId = deleteBtn.dataset.holidayId;
+  const holidayName = deleteBtn.dataset.holidayName || "วันหยุดนี้";
+
+  showPopup({
+    title: "ยืนยันการลบ",
+    message: `คุณต้องการลบ ${holidayName} ใช่ไหม`,
+    confirmText: "ลบ",
+    cancelText: "ยกเลิก",
+    onConfirm: () => {
+      deleteHoliday(holidayId);
+    }
+  });
+}
+
 /* ===== REPORT ===== */
 function buildReportRangeText(start, end) {
   return `ช่วงรายงาน: ${formatThaiDate(getDateKey(start))} - ${formatThaiDate(getDateKey(end))}`;
@@ -573,6 +777,21 @@ function getLeaveDaysSet(items, start, end) {
   });
 
   return result;
+}
+
+function getCompanyHolidayMapInRange(start, end) {
+  const map = new Map();
+
+  holidayItems.forEach((item) => {
+    const date = parseYmdToLocalDate(item.date);
+    if (!date) return;
+
+    if (date >= start && date <= end) {
+      map.set(item.date, item.name || "วันหยุดบริษัท");
+    }
+  });
+
+  return map;
 }
 
 async function loadEmployeesForReport() {
@@ -613,8 +832,10 @@ async function loadApprovedLeavesForUser(uid) {
     .filter((item) => item.status === "approved");
 }
 
-function computeDayRow(date, attendanceRecord, approvedLeaveSet) {
+function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayMap) {
   const dateKey = getDateKey(date);
+  const companyHolidayName = companyHolidayMap.get(dateKey);
+  const fixedHolidayName = getFixedThaiHolidayLabel(date);
 
   if (approvedLeaveSet.has(dateKey)) {
     return {
@@ -629,9 +850,33 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet) {
     };
   }
 
-  const hasAttendance = !!attendanceRecord?.checkInTime;
+  if (companyHolidayName) {
+    return {
+      dateKey,
+      status: "วันหยุด",
+      checkIn: "-",
+      checkOut: "-",
+      siteIn: "-",
+      siteOut: "-",
+      note: companyHolidayName,
+      otMinutes: 0
+    };
+  }
 
-  if (isSunday(date) && !hasAttendance) {
+  if (fixedHolidayName) {
+    return {
+      dateKey,
+      status: "วันหยุด",
+      checkIn: "-",
+      checkOut: "-",
+      siteIn: "-",
+      siteOut: "-",
+      note: fixedHolidayName,
+      otMinutes: 0
+    };
+  }
+
+  if (isSunday(date)) {
     return {
       dateKey,
       status: "วันหยุด",
@@ -658,25 +903,21 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet) {
   }
 
   const otMinutes = getOtMinutesForRecord(date, attendanceRecord);
-  const isLate = !isSunday(date) && attendanceRecord.checkInStatus === "สาย";
+  const isLate = attendanceRecord.checkInStatus === "สาย";
   const hasOt = otMinutes > 0;
 
   let status = "ปกติ";
-
-  if (isSunday(date)) {
-    status = hasOt ? "OT" : "วันหยุด";
-  } else if (isLate && hasOt) {
-    status = "สาย + OT";
-  } else if (isLate) {
-    status = "สาย";
-  } else if (hasOt) {
-    status = "OT";
-  }
+  if (isLate && hasOt) status = "สาย + OT";
+  else if (isLate) status = "สาย";
+  else if (hasOt) status = "OT";
 
   let note = attendanceRecord.autoCheckedOut ? "ตัดอัตโนมัติ" : "-";
 
   if (otMinutes > 0) {
-    note = note === "-" ? `OT ${formatOtMinutes(otMinutes)}` : `${note} · OT ${formatOtMinutes(otMinutes)}`;
+    note =
+      note === "-"
+        ? `OT ${formatOtMinutes(otMinutes)}`
+        : `${note} · OT ${formatOtMinutes(otMinutes)}`;
   }
 
   return {
@@ -800,8 +1041,12 @@ async function loadReport() {
     const { start, end } = getReportRangeFromMonth(monthValue);
     reportRangeText.textContent = buildReportRangeText(start, end);
 
+    // ให้แน่ใจว่าได้วันหยุดล่าสุดก่อนทำ report
+    await loadHolidays();
+
     const users = await loadEmployeesForReport();
     const dates = getDatesInRange(start, end);
+    const companyHolidayMap = getCompanyHolidayMapInRange(start, end);
 
     const reportItems = [];
 
@@ -816,7 +1061,12 @@ async function loadReport() {
       let leaveCount = 0;
 
       const rows = dates.map((date) => {
-        const row = computeDayRow(date, attendanceMap.get(getDateKey(date)), approvedLeaveSet);
+        const row = computeDayRow(
+          date,
+          attendanceMap.get(getDateKey(date)),
+          approvedLeaveSet,
+          companyHolidayMap
+        );
 
         if (row.status === "สาย" || row.status === "สาย + OT") {
           lateCount += 1;
@@ -879,6 +1129,7 @@ onAuthStateChanged(auth, async (user) => {
 
     showSection(adminHomeSection);
     await loadApprovalItems();
+    await loadHolidays();
   } catch (error) {
     console.error(error);
     await signOut(auth);
@@ -895,6 +1146,11 @@ openApprovalBtn.addEventListener("click", async () => {
   await loadApprovalItems();
 });
 
+openHolidaysBtn.addEventListener("click", async () => {
+  showSection(holidaysSection);
+  await loadHolidays();
+});
+
 backFromReportsBtn.addEventListener("click", () => {
   showSection(adminHomeSection);
 });
@@ -903,8 +1159,16 @@ backFromApprovalBtn.addEventListener("click", () => {
   showSection(adminHomeSection);
 });
 
+backFromHolidaysBtn.addEventListener("click", () => {
+  showSection(adminHomeSection);
+});
+
 refreshApprovalBtn.addEventListener("click", async () => {
   await loadApprovalItems();
+});
+
+refreshHolidaysBtn.addEventListener("click", async () => {
+  await loadHolidays();
 });
 
 loadReportBtn.addEventListener("click", async () => {
@@ -929,6 +1193,9 @@ approvalDropdownItems.forEach((item) => {
     renderApprovalList(approvalItems);
   });
 });
+
+holidayForm.addEventListener("submit", saveHoliday);
+holidayList.addEventListener("click", handleHolidayListClick);
 
 document.addEventListener("click", (event) => {
   if (!approvalDropdown.contains(event.target)) {
