@@ -754,35 +754,78 @@ function getCompanyHolidayName(date) {
   const found = cachedCompanyHolidays.find((item) => item.date === ymd);
   return found ? found.name || "วันหยุดบริษัท" : null;
 }
+
 function generateUpcomingHolidays() {
   const today = new Date();
-  const result = [];
+  const temp = [];
 
+  // 1. เก็บวันหยุดก่อน
   for (let i = 0; i < 30; i++) {
     const d = new Date();
     d.setDate(today.getDate() + i);
 
     const ymd = formatYmd(d);
 
-    // 1. วันหยุดบริษัท
     const company = getCompanyHolidayName(d);
     if (company) {
-      result.push({
-        name: company,
-        date: ymd
-      });
+      temp.push({ name: company, date: ymd });
       continue;
     }
 
-    // 2. วันหยุดไทย
     const thai = getFixedThaiHolidayName(d);
     if (thai) {
-      result.push({
-        name: thai,
-        date: ymd
-      });
+      temp.push({ name: thai, date: ymd });
     }
   }
+
+  // 2. รวมวันติดกัน
+  const result = [];
+  let group = [];
+
+  function pushGroup() {
+    if (group.length === 0) return;
+
+    const first = group[0];
+    const last = group[group.length - 1];
+
+    const start = parseYmdToLocalDate(first.date);
+    const end = parseYmdToLocalDate(last.date);
+
+    let text;
+
+    if (group.length === 1) {
+      text = formatThaiDate(first.date);
+    } else {
+      text =
+        `${start.getDate()}–${end.getDate()} ` +
+        start.toLocaleDateString("th-TH", { month: "short", year: "numeric" });
+    }
+
+    result.push({
+      name: first.name,
+      display: text
+    });
+
+    group = [];
+  }
+
+  for (let i = 0; i < temp.length; i++) {
+    const current = temp[i];
+    const prev = group[group.length - 1];
+
+    if (
+      prev &&
+      current.name === prev.name &&
+      new Date(current.date) - new Date(prev.date) === 86400000
+    ) {
+      group.push(current);
+    } else {
+      pushGroup();
+      group.push(current);
+    }
+  }
+
+  pushGroup();
 
   return result;
 }
@@ -802,7 +845,7 @@ function renderHolidayList() {
   holidayListEl.innerHTML = holidays.map(h => `
     <div class="holiday-item">
       <span class="holiday-name">${h.name}</span>
-      <span class="holiday-date">${formatThaiDate(h.date)}</span>
+      <span class="holiday-date">${h.display}</span>
     </div>
   `).join("");
 }

@@ -960,6 +960,77 @@ textarea {
   background: #ececec;
   color: #444444;
 }
+/* ===== HOLIDAY CARD - COMPACT / NO INNER BOX ===== */
+.holiday-card {
+  background: #fff7cc;
+  border: 1px solid #f3d66b;
+  border-left: 4px solid #f4b400;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 14px rgba(244, 180, 0, 0.12);
+}
+
+.holiday-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a6400;
+}
+
+.holiday-card-header::before {
+  content: "🔔";
+  font-size: 14px;
+  line-height: 1;
+}
+
+.holiday-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.holiday-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 2px;
+}
+
+.holiday-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b2b00;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.holiday-date {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff2a3;
+  color: #7a5a00;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.holiday-empty {
+  text-align: center;
+  font-size: 12px;
+  color: #8a7a3d;
+  padding: 4px 0;
+}
 
 @media (max-width: 420px) {
   .main-content {
@@ -1087,49 +1158,4 @@ textarea {
       0 0 14px rgba(11, 49, 136, 0.35);
   }
 
-  /* ===== HOLIDAY CARD ===== */
-.holiday-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-}
-
-.holiday-card-header {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.holiday-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.holiday-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f6f7fb;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 13px;
-}
-
-.holiday-name {
-  font-weight: 500;
-}
-
-.holiday-date {
-  color: #666;
-  font-size: 12px;
-}
-
-.holiday-empty {
-  text-align: center;
-  font-size: 13px;
-  color: #999;
-}
 }
