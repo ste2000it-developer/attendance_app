@@ -189,8 +189,8 @@ function formatExcelDate(ymd) {
   const date = parseYmdToLocalDate(ymd);
   if (!date) return "-";
 
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
+  return date.toLocaleDateString("th-TH", {
+    day: "numeric",
     month: "short",
     year: "numeric"
   });
@@ -1022,9 +1022,9 @@ function renderReport(reportItems) {
                     <th>วันที่</th>
                     <th>สถานะ</th>
                     <th>เข้างาน</th>
-                    <th>ออกงาน</th>
-                    <th>Site In</th>
-                    <th>Site Out</th>
+                    <th>เลิกงาน</th>
+                    <th>เข้างานที่</th>
+                    <th>เลิกงานที่</th>
                     <th>หมายเหตุ</th>
                   </tr>
                 </thead>
@@ -1218,7 +1218,7 @@ async function exportExcel() {
       );
 
       const worksheet = workbook.addWorksheet(sheetName, {
-        views: [{ state: "frozen", ySplit: 9 }]
+        views: [{ state: "frozen", ySplit: 8 }]
       });
 
       worksheet.properties.defaultRowHeight = 23;
@@ -1268,7 +1268,7 @@ async function exportExcel() {
 
       worksheet.mergeCells("A2:H2");
       const titleCell = worksheet.getCell("A2");
-      titleCell.value = "Attendance Report";
+      titleCell.value = "รายงานการเข้างาน";
       titleCell.font = {
         name: "Segoe UI",
         size: 12,
@@ -1283,7 +1283,7 @@ async function exportExcel() {
 
       worksheet.mergeCells("A3:H3");
       const periodCell = worksheet.getCell("A3");
-      periodCell.value = `Period: ${periodText}`;
+      periodCell.value = `ตั้งแต่วันที่ ${periodText}`;
       periodCell.font = {
         name: "Segoe UI",
         size: 9,
@@ -1301,14 +1301,14 @@ async function exportExcel() {
 
       worksheet.getRow(4).height = 7;
 
-      worksheet.getCell("A5").value = "Employee";
+      worksheet.getCell("A5").value = "ชื่อ-นามสกุล";
       worksheet.getCell("B5").value = employee.name || "-";
-      worksheet.getCell("D5").value = "Employee ID";
+      worksheet.getCell("D5").value = "รหัสพนักงาน";
       worksheet.getCell("E5").value = employee.employeeCode || "-";
 
-      worksheet.getCell("A6").value = "Department";
+      worksheet.getCell("A6").value = "แผนก";
       worksheet.getCell("B6").value = employee.department || "-";
-      worksheet.getCell("D6").value = "Position";
+      worksheet.getCell("D6").value = "ตำแหน่ง";
       worksheet.getCell("E6").value = employee.position || "-";
 
       ["A5", "D5", "A6", "D6"].forEach((address) => {
@@ -1332,14 +1332,14 @@ async function exportExcel() {
 
       const headerRowNumber = 8;
       const headerLabels = [
-        "Date",
-        "Status",
-        "Check In",
-        "Check Out",
-        "Site In",
-        "Site Out",
+        "วันที่",
+        "สถานะ",
+        "เข้างาน",
+        "เลิกงาน",
+        "เข้างานที่",
+        "ออกงานที่",
         "OT",
-        "Note"
+        "หมายเหตุ"
       ];
 
       headerLabels.forEach((label, index) => {
@@ -1429,7 +1429,7 @@ const summaryBodyStartRow = summaryStartRow + 1;
 // SUMMARY TITLE
 worksheet.mergeCells(`F${summaryTitleRow}:H${summaryTitleRow}`);
 const summaryTitleCell = worksheet.getCell(`F${summaryTitleRow}`);
-summaryTitleCell.value = "SUMMARY";
+summaryTitleCell.value = "ผลรวม";
 summaryTitleCell.font = {
   name: "Segoe UI",
   size: 13,
@@ -1455,9 +1455,9 @@ worksheet.getRow(summaryTitleRow).height = 24;
 
 // SUMMARY ITEMS
 const summaryItems = [
-  ["Late", `${employee.lateCount} day(s)`],
-  ["OT Total", formatOtMinutes(employee.otMinutes)],
-  ["Leave", `${employee.leaveCount} day(s)`]
+  ["มาสาย", `${employee.lateCount} วัน`],
+  ["OT รวม", formatOtMinutes(employee.otMinutes)],
+  ["การลา", `${employee.leaveCount} วัน`]
 ];
 
 summaryItems.forEach((item, index) => {
