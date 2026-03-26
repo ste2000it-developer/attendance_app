@@ -29,6 +29,7 @@ const backFromHolidaysBtn = document.getElementById("backFromHolidaysBtn");
 const refreshApprovalBtn = document.getElementById("refreshApprovalBtn");
 const refreshHolidaysBtn = document.getElementById("refreshHolidaysBtn");
 const loadReportBtn = document.getElementById("loadReportBtn");
+const exportExcelBtn = document.getElementById("exportExcelBtn");
 
 const reportMonthInput = document.getElementById("reportMonthInput");
 const reportRangeText = document.getElementById("reportRangeText");
@@ -59,12 +60,16 @@ const adminPopupMessage = document.getElementById("adminPopupMessage");
 const adminPopupCancelBtn = document.getElementById("adminPopupCancelBtn");
 const adminPopupConfirmBtn = document.getElementById("adminPopupConfirmBtn");
 
-const exportExcelBtn = document.getElementById("exportExcelBtn");
-
 let approvalItems = [];
 let holidayItems = [];
 let isApprovalActionRunning = false;
 let currentView = "pending";
+let currentReportItems = [];
+let currentReportRange = {
+  start: null,
+  end: null,
+  monthValue: ""
+};
 
 const viewLabelMap = {
   pending: "รออนุมัติ",
@@ -73,8 +78,15 @@ const viewLabelMap = {
   rejected: "ไม่อนุมัติ"
 };
 
-// วันหยุดไทยแบบ "วันที่คงที่ทุกปี"
-// วันลอยตัว/วันจันทรคติ/วันหยุดพิเศษ ให้เพิ่มผ่าน holidays collection
+const BRAND_BLUE = "FF082F79";
+const BRAND_RED = "FFAA1225";
+const SOFT_BLUE = "FFF2F6FF";
+const SOFT_RED = "FFFFF3F5";
+const SOFT_GRAY = "FFF8FAFC";
+const LINE_GRAY = "FFE2E8F0";
+const TEXT_DARK = "FF0F172A";
+const TEXT_MUTED = "FF64748B";
+
 const FIXED_THAI_HOLIDAYS = {
   "01-01": "วันขึ้นปีใหม่",
   "04-06": "วันจักรี",
@@ -171,6 +183,22 @@ function formatDateTimeThai(isoString) {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function formatExcelDate(ymd) {
+  const date = parseYmdToLocalDate(ymd);
+  if (!date) return "-";
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function formatExcelPeriod(start, end) {
+  if (!start || !end) return "-";
+  return `${formatExcelDate(getDateKey(start))} - ${formatExcelDate(getDateKey(end))}`;
 }
 
 function isSunday(date) {
@@ -1025,6 +1053,523 @@ function bindReportCardToggle() {
   });
 }
 
+function sanitizeSheetName(value) {
+  const safe = String(value || "Sheet")
+    .replace(/[\\/*?:[\]]/g, "")
+    .trim();
+
+  return safe.slice(0, 31) || "Sheet";
+}
+
+function getUniqueSheetName(workbook, baseName) {
+  const cleanBase = sanitizeSheetName(baseName);
+  let finalName = cleanBase;
+  let counter = 1;
+
+  while (workbook.getWorksheet(finalName)) {
+    const suffix = `-${counter}`;
+    finalName = `${cleanBase.slice(0, Math.max(1, 31 - suffix.length))}${suffix}`;
+    counter += 1;
+  }
+
+  return finalName;
+}
+
+function getExcelStatusTheme(status) {
+  const themes = {
+    "สาย": {
+      fontColor: "FF9A6700",
+      fillColor: "FFFFF7E1"
+    },
+    "OT": {
+      fontColor: BRAND_BLUE,
+      fillColor: "FFF2F6FF"
+    },
+    "สาย + OT": {
+      fontColor: BRAND_RED,
+      fillColor: "FFFFF1F3"
+    },
+    "ลา": {
+      fontColor: "FF475569",
+      fillColor: "FFF7FAFC"
+    },
+    "วันหยุด": {
+      fontColor: "FF6B7280",
+      fillColor: "FFF8FAFC"
+    }
+  };
+
+  return themes[status] || null;
+}
+
+function getExcelCleanNote(row) {
+  const raw = String(row.note || "-").trim();
+
+  if (!raw || raw === "-") {
+    return "-";
+  }
+
+  if (raw.includes("· OT ")) {
+    const cleaned = raw.replace(/\s*·\s*OT .*$/u, "").trim();
+    return cleaned || "-";
+  }
+
+  if (raw.startsWith("OT ")) {
+    return "-";
+  }
+
+  return raw;
+}
+
+function setBottomBorder(cell, color = LINE_GRAY, style = "thin") {
+  cell.border = {
+    bottom: {
+      style,
+      color: { argb: color }
+    }
+  };
+}
+
+function setTopAndBottomBorder(cell, topColor = LINE_GRAY, bottomColor = LINE_GRAY) {
+  cell.border = {
+    top: {
+      style: "thin",
+      color: { argb: topColor }
+    },
+    bottom: {
+      style: "thin",
+      color: { argb: bottomColor }
+    }
+  };
+}
+
+function fillCell(cell, color) {
+  cell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: color }
+  };
+}
+
+function styleMetaLabelCell(cell) {
+  cell.font = {
+    name: "Segoe UI",
+    size: 10,
+    bold: true,
+    color: { argb: TEXT_MUTED }
+  };
+  cell.alignment = {
+    vertical: "middle",
+    horizontal: "left"
+  };
+}
+
+function styleMetaValueCell(cell) {
+  cell.font = {
+    name: "Segoe UI",
+    size: 11,
+    color: { argb: TEXT_DARK }
+  };
+  cell.alignment = {
+    vertical: "middle",
+    horizontal: "left"
+  };
+}
+
+async function exportExcel() {
+  if (!window.ExcelJS) {
+    showPopup({
+      title: "ไม่พร้อมใช้งาน",
+      message: "ไม่พบไลบรารีสำหรับสร้างไฟล์ Excel",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+    return;
+  }
+
+  if (!currentReportItems.length) {
+    showPopup({
+      title: "ยังไม่มีข้อมูล",
+      message: "กรุณาโหลดรายงานก่อน",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+    return;
+  }
+
+  try {
+    exportExcelBtn.disabled = true;
+    exportExcelBtn.textContent = "กำลังสร้างไฟล์...";
+
+    const workbook = new window.ExcelJS.Workbook();
+    workbook.creator = "ChatGPT";
+    workbook.company = "S.TUNTIVIVAT ENGINEERING 2000 CO.,LTD.";
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const periodText = formatExcelPeriod(currentReportRange.start, currentReportRange.end);
+
+    currentReportItems.forEach((employee) => {
+      const sheetName = getUniqueSheetName(
+        workbook,
+        `${employee.employeeCode || ""}-${employee.name || "Employee"}`
+      );
+
+      const worksheet = workbook.addWorksheet(sheetName, {
+        views: [{ state: "frozen", ySplit: 9 }]
+      });
+
+      worksheet.properties.defaultRowHeight = 23;
+      worksheet.pageSetup = {
+        paperSize: 9, // A4
+        orientation: "portrait",
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        horizontalCentered: false,
+        verticalCentered: false,
+        margins: {
+        left: 0.3,
+        right: 0.3,
+        top: 0.4,
+        bottom: 0.4,
+        header: 0.15,
+        footer: 0.15
+        }
+      };
+
+      worksheet.columns = [
+        { width: 11 }, // Date
+        { width: 13 }, // Status
+        { width: 9 },  // In
+        { width: 9 },  // Out
+        { width: 13 }, // Site In
+        { width: 13 }, // Site Out
+        { width: 13 }, // OT
+        { width: 18 }  // Note
+      ];
+
+      worksheet.mergeCells("A1:H1");
+      const companyCell = worksheet.getCell("A1");
+      companyCell.value = "S.TUNTIVIVAT ENGINEERING 2000 CO.,LTD.";
+      companyCell.font = {
+        name: "Segoe UI",
+        size: 16,
+        bold: true,
+        color: { argb: BRAND_BLUE }
+      };
+      companyCell.alignment = {
+        horizontal: "left",
+        vertical: "middle"
+      };
+      worksheet.getRow(1).height = 22;
+
+      worksheet.mergeCells("A2:H2");
+      const titleCell = worksheet.getCell("A2");
+      titleCell.value = "Attendance Report";
+      titleCell.font = {
+        name: "Segoe UI",
+        size: 12,
+        bold: true,
+        color: { argb: TEXT_DARK }
+      };
+      titleCell.alignment = {
+        horizontal: "left",
+        vertical: "middle"
+      };
+      worksheet.getRow(2).height = 18;
+
+      worksheet.mergeCells("A3:H3");
+      const periodCell = worksheet.getCell("A3");
+      periodCell.value = `Period: ${periodText}`;
+      periodCell.font = {
+        name: "Segoe UI",
+        size: 9,
+        color: { argb: TEXT_MUTED }
+      };
+      periodCell.alignment = {
+        horizontal: "left",
+        vertical: "middle"
+      };
+      worksheet.getRow(3).height = 16;
+
+      for (let col = 1; col <= 8; col += 1) {
+        setBottomBorder(worksheet.getCell(3, col), BRAND_RED, "thin");
+      }
+
+      worksheet.getRow(4).height = 7;
+
+      worksheet.getCell("A5").value = "Employee";
+      worksheet.getCell("B5").value = employee.name || "-";
+      worksheet.getCell("D5").value = "Employee ID";
+      worksheet.getCell("E5").value = employee.employeeCode || "-";
+
+      worksheet.getCell("A6").value = "Department";
+      worksheet.getCell("B6").value = employee.department || "-";
+      worksheet.getCell("D6").value = "Position";
+      worksheet.getCell("E6").value = employee.position || "-";
+
+      ["A5", "D5", "A6", "D6"].forEach((address) => {
+        styleMetaLabelCell(worksheet.getCell(address));
+      });
+
+      ["B5", "E5", "B6", "E6"].forEach((address) => {
+        styleMetaValueCell(worksheet.getCell(address));
+      });
+
+      fillCell(worksheet.getCell("A5"), SOFT_BLUE);
+      fillCell(worksheet.getCell("D5"), SOFT_BLUE);
+      fillCell(worksheet.getCell("A6"), SOFT_RED);
+      fillCell(worksheet.getCell("D6"), SOFT_RED);
+
+      for (let col = 1; col <= 8; col += 1) {
+        setBottomBorder(worksheet.getCell(6, col), LINE_GRAY, "thin");
+      }
+
+      worksheet.getRow(7).height = 8;
+
+      const headerRowNumber = 8;
+      const headerLabels = [
+        "Date",
+        "Status",
+        "Check In",
+        "Check Out",
+        "Site In",
+        "Site Out",
+        "OT",
+        "Note"
+      ];
+
+      headerLabels.forEach((label, index) => {
+        const cell = worksheet.getCell(headerRowNumber, index + 1);
+        cell.value = label;
+        cell.font = {
+          name: "Segoe UI",
+          size: 9,
+          bold: true,
+          color: { argb: BRAND_BLUE }
+        };
+        cell.alignment = {
+          horizontal: index >= 4 || index === 7 ? "left" : "center",
+          vertical: "middle"
+        };
+        fillCell(cell, SOFT_BLUE);
+        setTopAndBottomBorder(cell, BRAND_BLUE, BRAND_BLUE);
+      });
+      worksheet.getRow(headerRowNumber).height = 22;
+
+      let currentRow = headerRowNumber + 1;
+
+      employee.rows.forEach((row) => {
+        const excelNote = getExcelCleanNote(row);
+        const excelOt = row.otMinutes > 0 ? formatOtMinutes(row.otMinutes) : "-";
+
+        worksheet.getCell(`A${currentRow}`).value = formatExcelDate(row.dateKey);
+        worksheet.getCell(`B${currentRow}`).value = row.status || "-";
+        worksheet.getCell(`C${currentRow}`).value = row.checkIn || "-";
+        worksheet.getCell(`D${currentRow}`).value = row.checkOut || "-";
+        worksheet.getCell(`E${currentRow}`).value = row.siteIn || "-";
+        worksheet.getCell(`F${currentRow}`).value = row.siteOut || "-";
+        worksheet.getCell(`G${currentRow}`).value = excelOt;
+        worksheet.getCell(`H${currentRow}`).value = excelNote;
+
+        for (let col = 1; col <= 8; col += 1) {
+          const cell = worksheet.getCell(currentRow, col);
+          cell.font = {
+            name: "Segoe UI",
+            size: 9,
+            color: { argb: TEXT_DARK }
+          };
+          cell.alignment = {
+            vertical: "middle",
+            horizontal:
+              col === 1 || col === 2 || col === 3 || col === 4 || col === 7
+                ? "center"
+                : "left",
+            wrapText: col === 8
+          };
+          setBottomBorder(cell, "FFF1F5F9", "thin");
+        }
+
+        const statusTheme = getExcelStatusTheme(row.status);
+        const statusCell = worksheet.getCell(`B${currentRow}`);
+
+        if (statusTheme) {
+          statusCell.font = {
+            name: "Segoe UI",
+            size: 9,
+            bold: true,
+            color: { argb: statusTheme.fontColor }
+          };
+          statusCell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: statusTheme.fillColor }
+          };
+        } else {
+          statusCell.font = {
+            name: "Segoe UI",
+            size: 9,
+            color: { argb: TEXT_MUTED }
+          };
+        }
+
+        worksheet.getRow(currentRow).height = 20;
+        currentRow += 1;
+      });
+
+     currentRow += 2;
+
+const summaryStartRow = currentRow;
+const summaryTitleRow = summaryStartRow;
+const summaryBodyStartRow = summaryStartRow + 1;
+
+// SUMMARY TITLE
+worksheet.mergeCells(`F${summaryTitleRow}:H${summaryTitleRow}`);
+const summaryTitleCell = worksheet.getCell(`F${summaryTitleRow}`);
+summaryTitleCell.value = "SUMMARY";
+summaryTitleCell.font = {
+  name: "Segoe UI",
+  size: 13,
+  bold: true,
+  color: { argb: "FFFFFFFF" }
+};
+summaryTitleCell.alignment = {
+  horizontal: "center",
+  vertical: "middle"
+};
+summaryTitleCell.fill = {
+  type: "pattern",
+  pattern: "solid",
+  fgColor: { argb: BRAND_RED }
+};
+summaryTitleCell.border = {
+  top: { style: "thin", color: { argb: BRAND_RED } },
+  left: { style: "thin", color: { argb: BRAND_RED } },
+  right: { style: "thin", color: { argb: BRAND_RED } },
+  bottom: { style: "thin", color: { argb: BRAND_RED } }
+};
+worksheet.getRow(summaryTitleRow).height = 24;
+
+// SUMMARY ITEMS
+const summaryItems = [
+  ["Late", `${employee.lateCount} day(s)`],
+  ["OT Total", formatOtMinutes(employee.otMinutes)],
+  ["Leave", `${employee.leaveCount} day(s)`]
+];
+
+summaryItems.forEach((item, index) => {
+  const rowNumber = summaryBodyStartRow + index;
+
+  const labelCell = worksheet.getCell(`F${rowNumber}`);
+  const valueCell = worksheet.getCell(`G${rowNumber}`);
+  const fillerCell = worksheet.getCell(`H${rowNumber}`);
+
+  labelCell.value = item[0];
+  valueCell.value = item[1];
+
+  labelCell.font = {
+    name: "Segoe UI",
+    size: 10,
+    bold: true,
+    color: { argb: BRAND_BLUE }
+  };
+  valueCell.font = {
+    name: "Segoe UI",
+    size: 11,
+    bold: true,
+    color: { argb: TEXT_DARK }
+  };
+
+  labelCell.alignment = {
+    horizontal: "left",
+    vertical: "middle"
+  };
+  valueCell.alignment = {
+    horizontal: "left",
+    vertical: "middle"
+  };
+
+  fillerCell.alignment = {
+    horizontal: "left",
+    vertical: "middle"
+  };
+
+  labelCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: SOFT_BLUE }
+  };
+  valueCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFFFFFFF" }
+  };
+  fillerCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFFFFFFF" }
+  };
+
+  labelCell.border = {
+    left: { style: "thin", color: { argb: BRAND_RED } },
+    bottom: { style: "thin", color: { argb: LINE_GRAY } }
+  };
+  valueCell.border = {
+    bottom: { style: "thin", color: { argb: LINE_GRAY } }
+  };
+  fillerCell.border = {
+    right: { style: "thin", color: { argb: BRAND_RED } },
+    bottom: { style: "thin", color: { argb: LINE_GRAY } }
+  };
+
+  worksheet.getRow(rowNumber).height = 22;
+});
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob(
+      [buffer],
+      {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `attendance-report-${currentReportRange.monthValue || reportMonthInput.value || "report"}.xlsx`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+
+    showPopup({
+      title: "สำเร็จ",
+      message: "สร้างไฟล์ Excel เรียบร้อยแล้ว",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+  } catch (error) {
+    console.error(error);
+    showPopup({
+      title: "ผิดพลาด",
+      message: "สร้างไฟล์ Excel ไม่สำเร็จ",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+  } finally {
+    if (exportExcelBtn) {
+      exportExcelBtn.disabled = false;
+      exportExcelBtn.textContent = "Export Excel";
+    }
+  }
+}
+
 async function loadReport() {
   const monthValue = reportMonthInput.value;
 
@@ -1041,17 +1586,16 @@ async function loadReport() {
 
   try {
     const { start, end } = getReportRangeFromMonth(monthValue);
+    currentReportRange = { start, end, monthValue };
     reportRangeText.textContent = buildReportRangeText(start, end);
 
-    // ให้แน่ใจว่าได้วันหยุดล่าสุดก่อนทำ report
     await loadHolidays();
 
     const users = await loadEmployeesForReport();
     const dates = getDatesInRange(start, end);
     const companyHolidayMap = getCompanyHolidayMapInRange(start, end);
 
-    window.currentReportItems = [];
-    const reportItems = window.currentReportItems;
+    const reportItems = [];
 
     for (const user of users) {
       const employeeCode = user.employeeId || user.id;
@@ -1098,12 +1642,14 @@ async function loadReport() {
       });
     }
 
+    currentReportItems = reportItems;
     renderReport(reportItems);
     bindReportCardToggle();
 
     reportLoading.style.display = "none";
   } catch (error) {
     console.error(error);
+    currentReportItems = [];
     reportLoading.style.display = "block";
     reportLoading.textContent = "โหลดรายงานไม่สำเร็จ";
     reportList.innerHTML = "";
@@ -1177,7 +1723,12 @@ refreshHolidaysBtn.addEventListener("click", async () => {
 loadReportBtn.addEventListener("click", async () => {
   await loadReport();
 });
-exportExcelBtn.addEventListener("click", exportExcel);
+
+if (exportExcelBtn) {
+  exportExcelBtn.addEventListener("click", async () => {
+    await exportExcel();
+  });
+}
 
 approvalDropdownBtn.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -1214,118 +1765,3 @@ adminPopupOverlay.addEventListener("click", (event) => {
     hidePopup();
   }
 });
-
-async function exportExcel() {
-  const data = window.currentReportItems;
-
-  if (!data || !data.length) {
-    showPopup({
-      title: "ยังไม่มีข้อมูล",
-      message: "กรุณาโหลดรายงานก่อน",
-      confirmText: "ตกลง",
-      hideCancel: true,
-      onConfirm: hidePopup
-    });
-    return;
-  }
-
-  const workbook = new ExcelJS.Workbook();
-
-  data.forEach((emp) => {
-    const sheet = workbook.addWorksheet(emp.name.substring(0, 30));
-
-    // ===== HEADER =====
-    sheet.mergeCells("A1:H1");
-    sheet.getCell("A1").value = "รายงานการเข้างาน";
-    sheet.getCell("A1").font = { size: 16, bold: true };
-
-    sheet.addRow([]);
-
-    sheet.addRow(["ชื่อ", emp.name]);
-    sheet.addRow(["รหัส", emp.employeeCode]);
-    sheet.addRow(["แผนก", emp.department]);
-    sheet.addRow(["ตำแหน่ง", emp.position]);
-
-    sheet.addRow([]);
-
-    // ===== TABLE HEADER =====
-    const headerRow = sheet.addRow([
-      "วันที่",
-      "สถานะ",
-      "เข้า",
-      "ออก",
-      "Site In",
-      "Site Out",
-      "หมายเหตุ"
-    ]);
-
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFE7F0FF" }
-      };
-      cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" }
-      };
-    });
-
-    // ===== DATA =====
-    emp.rows.forEach((row) => {
-      const excelRow = sheet.addRow([
-        formatThaiDate(row.dateKey),
-        row.status,
-        row.checkIn,
-        row.checkOut,
-        row.siteIn,
-        row.siteOut,
-        row.note
-      ]);
-
-      excelRow.eachCell((cell) => {
-        cell.border = {
-          top: { style: "thin" },
-          left: { style: "thin" },
-          bottom: { style: "thin" },
-          right: { style: "thin" }
-        };
-      });
-    });
-
-    // ===== SUMMARY =====
-    sheet.addRow([]);
-    sheet.addRow(["สรุป"]);
-    sheet.addRow(["มาสาย", emp.lateCount]);
-    sheet.addRow(["OT", formatOtMinutes(emp.otMinutes)]);
-    sheet.addRow(["ลา", emp.leaveCount]);
-
-    // ===== COLUMN WIDTH =====
-    sheet.columns = [
-      { width: 14 },
-      { width: 14 },
-      { width: 12 },
-      { width: 12 },
-      { width: 16 },
-      { width: 16 },
-      { width: 24 }
-    ];
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-
-  const blob = new Blob([buffer], {
-    type:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  });
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `attendance-report-${reportMonthInput.value}.xlsx`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
