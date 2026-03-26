@@ -59,6 +59,8 @@ const adminPopupMessage = document.getElementById("adminPopupMessage");
 const adminPopupCancelBtn = document.getElementById("adminPopupCancelBtn");
 const adminPopupConfirmBtn = document.getElementById("adminPopupConfirmBtn");
 
+const exportExcelBtn = document.getElementById("exportExcelBtn");
+
 let approvalItems = [];
 let holidayItems = [];
 let isApprovalActionRunning = false;
@@ -1048,7 +1050,8 @@ async function loadReport() {
     const dates = getDatesInRange(start, end);
     const companyHolidayMap = getCompanyHolidayMapInRange(start, end);
 
-    const reportItems = [];
+    window.currentReportItems = [];
+    const reportItems = window.currentReportItems;
 
     for (const user of users) {
       const employeeCode = user.employeeId || user.id;
@@ -1174,6 +1177,7 @@ refreshHolidaysBtn.addEventListener("click", async () => {
 loadReportBtn.addEventListener("click", async () => {
   await loadReport();
 });
+exportExcelBtn.addEventListener("click", exportExcel);
 
 approvalDropdownBtn.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -1210,3 +1214,118 @@ adminPopupOverlay.addEventListener("click", (event) => {
     hidePopup();
   }
 });
+
+async function exportExcel() {
+  const data = window.currentReportItems;
+
+  if (!data || !data.length) {
+    showPopup({
+      title: "ยังไม่มีข้อมูล",
+      message: "กรุณาโหลดรายงานก่อน",
+      confirmText: "ตกลง",
+      hideCancel: true,
+      onConfirm: hidePopup
+    });
+    return;
+  }
+
+  const workbook = new ExcelJS.Workbook();
+
+  data.forEach((emp) => {
+    const sheet = workbook.addWorksheet(emp.name.substring(0, 30));
+
+    // ===== HEADER =====
+    sheet.mergeCells("A1:H1");
+    sheet.getCell("A1").value = "รายงานการเข้างาน";
+    sheet.getCell("A1").font = { size: 16, bold: true };
+
+    sheet.addRow([]);
+
+    sheet.addRow(["ชื่อ", emp.name]);
+    sheet.addRow(["รหัส", emp.employeeCode]);
+    sheet.addRow(["แผนก", emp.department]);
+    sheet.addRow(["ตำแหน่ง", emp.position]);
+
+    sheet.addRow([]);
+
+    // ===== TABLE HEADER =====
+    const headerRow = sheet.addRow([
+      "วันที่",
+      "สถานะ",
+      "เข้า",
+      "ออก",
+      "Site In",
+      "Site Out",
+      "หมายเหตุ"
+    ]);
+
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE7F0FF" }
+      };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" }
+      };
+    });
+
+    // ===== DATA =====
+    emp.rows.forEach((row) => {
+      const excelRow = sheet.addRow([
+        formatThaiDate(row.dateKey),
+        row.status,
+        row.checkIn,
+        row.checkOut,
+        row.siteIn,
+        row.siteOut,
+        row.note
+      ]);
+
+      excelRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        };
+      });
+    });
+
+    // ===== SUMMARY =====
+    sheet.addRow([]);
+    sheet.addRow(["สรุป"]);
+    sheet.addRow(["มาสาย", emp.lateCount]);
+    sheet.addRow(["OT", formatOtMinutes(emp.otMinutes)]);
+    sheet.addRow(["ลา", emp.leaveCount]);
+
+    // ===== COLUMN WIDTH =====
+    sheet.columns = [
+      { width: 14 },
+      { width: 14 },
+      { width: 12 },
+      { width: 12 },
+      { width: 16 },
+      { width: 16 },
+      { width: 24 }
+    ];
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+
+  const blob = new Blob([buffer], {
+    type:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `attendance-report-${reportMonthInput.value}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
