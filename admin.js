@@ -110,7 +110,22 @@ function showSection(sectionToShow) {
   reportsSection.classList.remove("active");
   approvalSection.classList.remove("active");
   holidaysSection.classList.remove("active");
+
   sectionToShow.classList.add("active");
+
+  requestAnimationFrame(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    const adminApp = document.querySelector(".admin-app");
+    const adminMain = document.querySelector(".admin-main");
+
+    if (adminApp) adminApp.scrollTop = 0;
+    if (adminMain) adminMain.scrollTop = 0;
+
+    sectionToShow.scrollTop = 0;
+  });
 }
 
 async function getUserDoc(user) {

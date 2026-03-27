@@ -59,44 +59,46 @@
       </section>
 
       <!-- REPORTS -->
-      <section id="reportsSection" class="admin-section">
-        <div class="panel-card">
-          <div class="panel-header panel-header-space">
-            <div>
-              <button id="backFromReportsBtn" class="back-btn" type="button">
-                ← กลับ
-              </button>
-              <h2 class="panel-title panel-title-with-back">Reports</h2>
-            </div>
+     <section id="reportsSection" class="admin-section">
+  <div class="panel-card">
+    <div class="panel-header panel-header-space">
+      <div>
+        <button id="backFromReportsBtn" class="back-btn" type="button">
+          ← กลับ
+        </button>
+        <h2 class="panel-title panel-title-with-back">Reports</h2>
+      </div>
 
-            <button id="loadReportBtn" class="ghost-btn" type="button">
-              โหลดรายงาน
-            </button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="loadReportBtn" class="ghost-btn" type="button">
+          โหลดรายงาน
+        </button>
 
-            <button id="exportExcelBtn" class="ghost-btn" type="button">
-              Export Excel
-            </button>
-          </div>
+        <button id="exportExcelBtn" class="ghost-btn" type="button">
+          Export Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- ✅ panel-body ต้องอยู่ใน panel-card -->
+    <div class="panel-body">
+      <div class="report-toolbar">
+        <div class="report-filter-group">
+          <label for="reportMonthInput" class="report-filter-label">เลือกเดือนรายงาน</label>
+          <input id="reportMonthInput" class="report-month-input" type="month" />
         </div>
+      </div>
 
-          <div class="panel-body">
-            <div class="report-toolbar">
-              <div class="report-filter-group">
-                <label for="reportMonthInput" class="report-filter-label">เลือกเดือนรายงาน</label>
-                <input id="reportMonthInput" class="report-month-input" type="month" />
-              </div>
-            </div>
+      <p id="reportRangeText" class="report-range-text">ช่วงรายงาน: -</p>
 
-            <p id="reportRangeText" class="report-range-text">ช่วงรายงาน: -</p>
+      <div id="reportLoading" class="approval-loading">
+        ยังไม่ได้โหลดรายงาน
+      </div>
 
-            <div id="reportLoading" class="approval-loading">
-              ยังไม่ได้โหลดรายงาน
-            </div>
-
-            <div id="reportList" class="report-list"></div>
-          </div>
-        </div>
-      </section>
+      <div id="reportList" class="report-list"></div>
+    </div>
+  </div>
+</section>
 
       <!-- APPROVAL -->
       <section id="approvalSection" class="admin-section">
