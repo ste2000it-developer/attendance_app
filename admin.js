@@ -1169,9 +1169,9 @@ function fillCell(cell, color) {
 function styleMetaLabelCell(cell) {
   cell.font = {
     name: "Segoe UI",
-    size: 10,
+    size: 9,
     bold: true,
-    color: { argb: TEXT_MUTED }
+    color: { argb: "FF475569" } // เทาเข้ม
   };
   cell.alignment = {
     vertical: "middle",
@@ -1183,11 +1183,14 @@ function styleMetaValueCell(cell) {
   cell.font = {
     name: "Segoe UI",
     size: 11,
+    bold: true, // 🔥 เพิ่มความเด่น
     color: { argb: TEXT_DARK }
   };
+
   cell.alignment = {
     vertical: "middle",
-    horizontal: "left"
+    horizontal: "left",
+    wrapText: false // 🔥 ห้ามขึ้นบรรทัดใหม่
   };
 }
 
@@ -1242,8 +1245,8 @@ async function exportExcel() {
         orientation: "portrait",
         fitToPage: true,
         fitToWidth: 1,
-        fitToHeight: 0,
-        horizontalCentered: false,
+        fitToHeight: 1,
+        horizontalCentered: true,
         verticalCentered: false,
         margins: {
         left: 0.3,
@@ -1255,16 +1258,16 @@ async function exportExcel() {
         }
       };
 
-      worksheet.columns = [
-        { width: 11 }, // Date
-        { width: 13 }, // Status
-        { width: 9 },  // In
-        { width: 9 },  // Out
-        { width: 13 }, // Site In
-        { width: 13 }, // Site Out
-        { width: 13 }, // OT
-        { width: 18 }  // Note
-      ];
+worksheet.columns = [
+  { width: 12 }, // วันที่
+  { width: 14 }, // สถานะ
+  { width: 10 }, // เข้างาน
+  { width: 10 }, // เลิกงาน
+  { width: 14 }, // เข้างานที่
+  { width: 14 }, // ออกงานที่
+  { width: 14 }, // OT
+  { width: 20 }  // หมายเหตุ
+];
 
       worksheet.mergeCells("A1:H1");
       const companyCell = worksheet.getCell("A1");
@@ -1318,6 +1321,13 @@ async function exportExcel() {
 
       worksheet.getCell("A5").value = "ชื่อ-นามสกุล";
       worksheet.getCell("B5").value = employee.name || "-";
+
+      worksheet.getCell("B5").alignment = {
+        vertical: "middle",
+        horizontal: "left",
+        wrapText: false
+      };
+
       worksheet.getCell("D5").value = "รหัสพนักงาน";
       worksheet.getCell("E5").value = employee.employeeCode || "-";
 
@@ -1325,6 +1335,9 @@ async function exportExcel() {
       worksheet.getCell("B6").value = employee.department || "-";
       worksheet.getCell("D6").value = "ตำแหน่ง";
       worksheet.getCell("E6").value = employee.position || "-";
+
+      worksheet.getRow(5).height = 20;
+      worksheet.getRow(6).height = 20;
 
       ["A5", "D5", "A6", "D6"].forEach((address) => {
         styleMetaLabelCell(worksheet.getCell(address));
@@ -1334,10 +1347,6 @@ async function exportExcel() {
         styleMetaValueCell(worksheet.getCell(address));
       });
 
-      fillCell(worksheet.getCell("A5"), SOFT_BLUE);
-      fillCell(worksheet.getCell("D5"), SOFT_BLUE);
-      fillCell(worksheet.getCell("A6"), SOFT_RED);
-      fillCell(worksheet.getCell("D6"), SOFT_RED);
 
       for (let col = 1; col <= 8; col += 1) {
         setBottomBorder(worksheet.getCell(6, col), LINE_GRAY, "thin");
@@ -1362,13 +1371,13 @@ async function exportExcel() {
         cell.value = label;
         cell.font = {
           name: "Segoe UI",
-          size: 9,
+          size: 8,
           bold: true,
           color: { argb: BRAND_BLUE }
         };
         cell.alignment = {
-          horizontal: index >= 4 || index === 7 ? "left" : "center",
-          vertical: "middle"
+        horizontal: "center",
+        vertical: "middle"
         };
         fillCell(cell, SOFT_BLUE);
         setTopAndBottomBorder(cell, BRAND_BLUE, BRAND_BLUE);
@@ -1390,23 +1399,29 @@ async function exportExcel() {
         worksheet.getCell(`G${currentRow}`).value = excelOt;
         worksheet.getCell(`H${currentRow}`).value = excelNote;
 
-        for (let col = 1; col <= 8; col += 1) {
-          const cell = worksheet.getCell(currentRow, col);
-          cell.font = {
-            name: "Segoe UI",
-            size: 9,
-            color: { argb: TEXT_DARK }
-          };
-          cell.alignment = {
-            vertical: "middle",
-            horizontal:
-              col === 1 || col === 2 || col === 3 || col === 4 || col === 7
-                ? "center"
-                : "left",
-            wrapText: col === 8
-          };
-          setBottomBorder(cell, "FFF1F5F9", "thin");
-        }
+       for (let col = 1; col <= 8; col += 1) {
+  const cell = worksheet.getCell(currentRow, col);
+
+  cell.font = {
+    name: "Segoe UI",
+    size: 8,
+    color: { argb: TEXT_DARK }
+  };
+
+cell.alignment = {
+  vertical: "middle",
+  horizontal: "center",
+  wrapText: true
+};
+
+  // 🔥 เพิ่ม grid เส้นเต็ม
+ cell.border = {
+  top: { style: "thin", color: { argb: "FF64748B" } },
+  left: { style: "thin", color: { argb: "FF64748B" } },
+  bottom: { style: "thin", color: { argb: "FF64748B" } },
+  right: { style: "thin", color: { argb: "FF64748B" } }
+};
+}
 
         const statusTheme = getExcelStatusTheme(row.status);
         const statusCell = worksheet.getCell(`B${currentRow}`);
@@ -1477,6 +1492,7 @@ const summaryItems = [
 
 summaryItems.forEach((item, index) => {
   const rowNumber = summaryBodyStartRow + index;
+  const isLastRow = index === summaryItems.length - 1;
 
   const labelCell = worksheet.getCell(`F${rowNumber}`);
   const valueCell = worksheet.getCell(`G${rowNumber}`);
@@ -1506,7 +1522,6 @@ summaryItems.forEach((item, index) => {
     horizontal: "left",
     vertical: "middle"
   };
-
   fillerCell.alignment = {
     horizontal: "left",
     vertical: "middle"
@@ -1530,14 +1545,16 @@ summaryItems.forEach((item, index) => {
 
   labelCell.border = {
     left: { style: "thin", color: { argb: BRAND_RED } },
-    bottom: { style: "thin", color: { argb: LINE_GRAY } }
+    bottom: { style: "thin", color: { argb: isLastRow ? BRAND_RED : LINE_GRAY } }
   };
+
   valueCell.border = {
-    bottom: { style: "thin", color: { argb: LINE_GRAY } }
+    bottom: { style: "thin", color: { argb: isLastRow ? BRAND_RED : LINE_GRAY } }
   };
+
   fillerCell.border = {
     right: { style: "thin", color: { argb: BRAND_RED } },
-    bottom: { style: "thin", color: { argb: LINE_GRAY } }
+    bottom: { style: "thin", color: { argb: isLastRow ? BRAND_RED : LINE_GRAY } }
   };
 
   worksheet.getRow(rowNumber).height = 22;
