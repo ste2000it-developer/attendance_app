@@ -1169,9 +1169,9 @@ function fillCell(cell, color) {
 function styleMetaLabelCell(cell) {
   cell.font = {
     name: "Segoe UI",
-    size: 9,
-    bold: true,
-    color: { argb: "FF475569" } // เทาเข้ม
+    size: 8,
+    bold: false,
+    color: { argb: TEXT_MUTED }
   };
   cell.alignment = {
     vertical: "middle",
@@ -1182,15 +1182,15 @@ function styleMetaLabelCell(cell) {
 function styleMetaValueCell(cell) {
   cell.font = {
     name: "Segoe UI",
-    size: 11,
-    bold: true, // 🔥 เพิ่มความเด่น
+    size: 10,
+    bold: true,
     color: { argb: TEXT_DARK }
   };
 
   cell.alignment = {
     vertical: "middle",
     horizontal: "left",
-    wrapText: false // 🔥 ห้ามขึ้นบรรทัดใหม่
+    wrapText: false
   };
 }
 
@@ -1259,14 +1259,14 @@ async function exportExcel() {
       };
 
 worksheet.columns = [
-  { width: 12 }, // วันที่
-  { width: 14 }, // สถานะ
-  { width: 10 }, // เข้างาน
-  { width: 10 }, // เลิกงาน
-  { width: 14 }, // เข้างานที่
-  { width: 14 }, // ออกงานที่
-  { width: 14 }, // OT
-  { width: 20 }  // หมายเหตุ
+  { width: 10 }, // A
+  { width: 22 }, // B ชื่อพนักงาน
+  { width: 8 },  // C
+  { width: 10 }, // D
+  { width: 16 }, // E
+  { width: 12 }, // F
+  { width: 12 }, // G
+  { width: 16 }  // H
 ];
 
       worksheet.mergeCells("A1:H1");
@@ -1319,38 +1319,44 @@ worksheet.columns = [
 
       worksheet.getRow(4).height = 7;
 
-      worksheet.getCell("A5").value = "ชื่อ-นามสกุล";
-      worksheet.getCell("B5").value = employee.name || "-";
+worksheet.getCell("A5").value = "ชื่อพนักงาน";
+worksheet.getCell("A6").value = "รหัสพนักงาน";
+worksheet.getCell("D6").value = "แผนก";
+worksheet.getCell("F6").value = "ตำแหน่ง";
 
-      worksheet.getCell("B5").alignment = {
-        vertical: "middle",
-        horizontal: "left",
-        wrapText: false
-      };
+worksheet.mergeCells("B5:H5");
+worksheet.getCell("B5").value = employee.name || "-";
+worksheet.getCell("B6").value = employee.employeeCode || "-";
+worksheet.getCell("E6").value = employee.department || "-";
+worksheet.getCell("G6").value = employee.position || "-";
 
-      worksheet.getCell("D5").value = "รหัสพนักงาน";
-      worksheet.getCell("E5").value = employee.employeeCode || "-";
+worksheet.getRow(5).height = 28;
+worksheet.getRow(6).height = 22;
 
-      worksheet.getCell("A6").value = "แผนก";
-      worksheet.getCell("B6").value = employee.department || "-";
-      worksheet.getCell("D6").value = "ตำแหน่ง";
-      worksheet.getCell("E6").value = employee.position || "-";
+styleMetaLabelCell(worksheet.getCell("A5"));
+styleMetaLabelCell(worksheet.getCell("A6"));
+styleMetaLabelCell(worksheet.getCell("D6"));
+styleMetaLabelCell(worksheet.getCell("F6"));
 
-      worksheet.getRow(5).height = 20;
-      worksheet.getRow(6).height = 20;
+worksheet.getCell("B5").font = {
+  name: "Segoe UI",
+  size: 15,
+  bold: true,
+  color: { argb: BRAND_BLUE }
+};
+worksheet.getCell("B5").alignment = {
+  vertical: "middle",
+  horizontal: "left",
+  wrapText: false
+};
 
-      ["A5", "D5", "A6", "D6"].forEach((address) => {
-        styleMetaLabelCell(worksheet.getCell(address));
-      });
+styleMetaValueCell(worksheet.getCell("B6"));
+styleMetaValueCell(worksheet.getCell("E6"));
+styleMetaValueCell(worksheet.getCell("G6"));
 
-      ["B5", "E5", "B6", "E6"].forEach((address) => {
-        styleMetaValueCell(worksheet.getCell(address));
-      });
-
-
-      for (let col = 1; col <= 8; col += 1) {
-        setBottomBorder(worksheet.getCell(6, col), LINE_GRAY, "thin");
-      }
+for (let col = 1; col <= 8; col += 1) {
+  setBottomBorder(worksheet.getCell(6, col), LINE_GRAY, "thin");
+}
 
       worksheet.getRow(7).height = 8;
 
