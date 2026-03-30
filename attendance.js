@@ -1944,23 +1944,48 @@ const PUSH_VAPID_KEY = "BH7h0sgilna9qAOdWTNaDMGDWuvOElzjtxNAOuHWTrQpIyp04N4hXL7R
 async function initPush(user) {
   try {
     if (!messaging) {
-      console.log("Push messaging not supported");
+      showPopup({
+        title: "Push error",
+        message: "เครื่องนี้หรือ browser นี้ไม่รองรับ push",
+        mode: "alert",
+        confirmText: "ตกลง"
+      });
       return;
     }
 
     if (!("Notification" in window)) {
-      console.log("Notification API not supported");
+      showPopup({
+        title: "Push error",
+        message: "เครื่องนี้ไม่มี Notification API",
+        mode: "alert",
+        confirmText: "ตกลง"
+      });
       return;
     }
 
     const permission = await Notification.requestPermission();
 
     if (permission !== "granted") {
-      console.log("❌ ไม่อนุญาตแจ้งเตือน");
+      showPopup({
+        title: "Push error",
+        message: "ยังไม่ได้อนุญาตแจ้งเตือน",
+        mode: "alert",
+        confirmText: "ตกลง"
+      });
       return;
     }
 
     const registration = await navigator.serviceWorker.ready;
+
+    if (!registration) {
+      showPopup({
+        title: "Push error",
+        message: "ยังไม่พร้อมใช้งาน service worker",
+        mode: "alert",
+        confirmText: "ตกลง"
+      });
+      return;
+    }
 
     const token = await getToken(messaging, {
       vapidKey: PUSH_VAPID_KEY,
@@ -1968,11 +1993,14 @@ async function initPush(user) {
     });
 
     if (!token) {
-      console.log("❌ ไม่มี token");
+      showPopup({
+        title: "Push error",
+        message: "ขอ token ไม่สำเร็จ",
+        mode: "alert",
+        confirmText: "ตกลง"
+      });
       return;
     }
-
-    console.log("✅ TOKEN:", token);
 
     const userDoc = await getUserDocByUid(user.uid);
 
@@ -1984,7 +2012,21 @@ async function initPush(user) {
       },
       { merge: true }
     );
+
+    showPopup({
+      title: "Push สำเร็จ",
+      message: "บันทึก pushToken เรียบร้อยแล้ว",
+      mode: "alert",
+      confirmText: "ตกลง"
+    });
   } catch (err) {
+    showPopup({
+      title: "Push error",
+      message: err?.message || "เกิดข้อผิดพลาดระหว่างตั้งค่า push",
+      mode: "alert",
+      confirmText: "ตกลง"
+    });
+
     console.error("Push error:", err);
   }
 }
