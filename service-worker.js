@@ -60,5 +60,3 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
-// 🔥 ADD THIS
-importScripts("./firebase-messaging-sw.js");

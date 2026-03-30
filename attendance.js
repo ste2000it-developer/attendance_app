@@ -6,9 +6,6 @@ import {
   getDocs,
   setDoc,
   collection,
-  messaging,
-  getToken,
-  onMessage,
   query,
   where,
   serverTimestamp,
@@ -1902,9 +1899,6 @@ onAuthStateChanged(auth, async (user) => {
 
     await sleep(250);
     hideAppLoading();
-    if (confirm("เปิดแจ้งเตือนไหม")) {
-  await initPush(user);
-}
   } catch (error) {
     console.error(error);
 
@@ -1941,81 +1935,3 @@ onAuthStateChanged(auth, async (user) => {
     });
   }
 });
-const PUSH_VAPID_KEY = "BH7h0sgilna9qAOdWTNaDMGDWuvOElzjtxNAOuHWTrQpIyp04N4hXL7Rf7U02bkzln59HIeOHQ9zddxtyWWAAQc";
-
-async function initPush(user) {
-  try {
-    if (!messaging) {
-      alert("PUSH STEP 1: messaging ไม่มี");
-      return;
-    }
-
-    if (!("Notification" in window)) {
-      alert("PUSH STEP 2: เครื่องนี้ไม่มี Notification API");
-      return;
-    }
-
-    alert("PUSH STEP 3: กำลังขอสิทธิ์แจ้งเตือน");
-
-    const permission = await Notification.requestPermission();
-
-    alert("PUSH STEP 4: permission = " + permission);
-
-    if (permission !== "granted") {
-      alert("PUSH STEP 5: ยังไม่ได้อนุญาตแจ้งเตือน");
-      return;
-    }
-
-    alert("PUSH STEP 6: รอ service worker");
-
-    const registration = await navigator.serviceWorker.ready;
-
-    if (!registration) {
-      alert("PUSH STEP 7: service worker ยังไม่พร้อม");
-      return;
-    }
-
-    alert("PUSH STEP 8: กำลังขอ token");
-
-    const token = await getToken(messaging, {
-      vapidKey: PUSH_VAPID_KEY,
-      serviceWorkerRegistration: registration
-    });
-
-    if (!token) {
-      alert("PUSH STEP 9: ขอ token ไม่สำเร็จ");
-      return;
-    }
-
-    alert("PUSH STEP 10: ได้ token แล้ว");
-
-    const userDoc = await getUserDocByUid(user.uid);
-
-    await setDoc(
-      doc(db, "users", userDoc.id),
-      {
-        pushToken: token,
-        pushUpdatedAt: new Date().toISOString()
-      },
-      { merge: true }
-    );
-
-    alert("PUSH STEP 11: บันทึก pushToken สำเร็จ");
-  } catch (err) {
-    alert("PUSH CATCH ERROR: " + (err?.message || err));
-    console.error("Push error:", err);
-  }
-}
-
-if (messaging) {
-  onMessage(messaging, (payload) => {
-    console.log("📩 foreground:", payload);
-
-    showPopup({
-      title: payload?.notification?.title || "แจ้งเตือน",
-      message: payload?.notification?.body || "",
-      mode: "alert",
-      confirmText: "ตกลง"
-    });
-  });
-}

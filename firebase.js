@@ -56,18 +56,3 @@ export {
   signInWithEmailAndPassword,
   signOut
 };
-
-// 🔥 ADD THIS (BOTTOM OF FILE)
-import {
-  getMessaging,
-  getToken,
-  onMessage
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
-
-const messaging = getMessaging(app);
-
-export {
-  messaging,
-  getToken,
-  onMessage
-};
