@@ -6,6 +6,9 @@ import {
   getDocs,
   setDoc,
   collection,
+  messaging,
+  getToken,
+  onMessage,
   query,
   where,
   serverTimestamp,
@@ -1831,6 +1834,10 @@ window.addEventListener("beforeunload", () => {
   if (watchId !== null) {
     navigator.geolocation.clearWatch(watchId);
   }
+
+  if (user) {
+  initPush(user); // 🔥 ADD THIS
+}
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -1934,4 +1941,47 @@ onAuthStateChanged(auth, async (user) => {
       }
     });
   }
+});
+// 🔥 PUSH SETUP (ADD ONLY)
+
+async function initPush(user) {
+  try {
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      console.log("❌ ไม่อนุญาตแจ้งเตือน");
+      return;
+    }
+
+    const token = await getToken(messaging, {
+      vapidKey: "BH7h0sgilna9qAOdWTNaDMGDWuvOElzjtxNAOuHWTrQpIyp04N4hXL7Rf7U02bkzln59HIeOHQ9zddxtyWWAAQc"
+    });
+
+    if (!token) {
+      console.log("❌ ไม่มี token");
+      return;
+    }
+
+    console.log("✅ TOKEN:", token);
+
+    // 🔥 เซฟลง Firestore
+    await setDoc(
+      doc(db, "users", user.uid),
+      { pushToken: token },
+      { merge: true }
+    );
+
+  } catch (err) {
+    console.error("Push error:", err);
+  }
+}
+
+// 🔥 รับ push ตอนเปิดแอพ
+onMessage(messaging, (payload) => {
+  console.log("📩 foreground:", payload);
+
+  alert(
+    payload.notification?.title + "\n" +
+    payload.notification?.body
+  );
 });
