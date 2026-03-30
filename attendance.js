@@ -1902,7 +1902,9 @@ onAuthStateChanged(auth, async (user) => {
 
     await sleep(250);
     hideAppLoading();
-    await initPush(user);
+    if (confirm("เปิดแจ้งเตือนไหม")) {
+  await initPush(user);
+}
   } catch (error) {
     console.error(error);
 
