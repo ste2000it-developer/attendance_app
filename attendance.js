@@ -1946,48 +1946,36 @@ const PUSH_VAPID_KEY = "BH7h0sgilna9qAOdWTNaDMGDWuvOElzjtxNAOuHWTrQpIyp04N4hXL7R
 async function initPush(user) {
   try {
     if (!messaging) {
-      showPopup({
-        title: "Push error",
-        message: "เครื่องนี้หรือ browser นี้ไม่รองรับ push",
-        mode: "alert",
-        confirmText: "ตกลง"
-      });
+      alert("PUSH STEP 1: messaging ไม่มี");
       return;
     }
 
     if (!("Notification" in window)) {
-      showPopup({
-        title: "Push error",
-        message: "เครื่องนี้ไม่มี Notification API",
-        mode: "alert",
-        confirmText: "ตกลง"
-      });
+      alert("PUSH STEP 2: เครื่องนี้ไม่มี Notification API");
       return;
     }
+
+    alert("PUSH STEP 3: กำลังขอสิทธิ์แจ้งเตือน");
 
     const permission = await Notification.requestPermission();
 
+    alert("PUSH STEP 4: permission = " + permission);
+
     if (permission !== "granted") {
-      showPopup({
-        title: "Push error",
-        message: "ยังไม่ได้อนุญาตแจ้งเตือน",
-        mode: "alert",
-        confirmText: "ตกลง"
-      });
+      alert("PUSH STEP 5: ยังไม่ได้อนุญาตแจ้งเตือน");
       return;
     }
+
+    alert("PUSH STEP 6: รอ service worker");
 
     const registration = await navigator.serviceWorker.ready;
 
     if (!registration) {
-      showPopup({
-        title: "Push error",
-        message: "ยังไม่พร้อมใช้งาน service worker",
-        mode: "alert",
-        confirmText: "ตกลง"
-      });
+      alert("PUSH STEP 7: service worker ยังไม่พร้อม");
       return;
     }
+
+    alert("PUSH STEP 8: กำลังขอ token");
 
     const token = await getToken(messaging, {
       vapidKey: PUSH_VAPID_KEY,
@@ -1995,14 +1983,11 @@ async function initPush(user) {
     });
 
     if (!token) {
-      showPopup({
-        title: "Push error",
-        message: "ขอ token ไม่สำเร็จ",
-        mode: "alert",
-        confirmText: "ตกลง"
-      });
+      alert("PUSH STEP 9: ขอ token ไม่สำเร็จ");
       return;
     }
+
+    alert("PUSH STEP 10: ได้ token แล้ว");
 
     const userDoc = await getUserDocByUid(user.uid);
 
@@ -2015,20 +2000,9 @@ async function initPush(user) {
       { merge: true }
     );
 
-    showPopup({
-      title: "Push สำเร็จ",
-      message: "บันทึก pushToken เรียบร้อยแล้ว",
-      mode: "alert",
-      confirmText: "ตกลง"
-    });
+    alert("PUSH STEP 11: บันทึก pushToken สำเร็จ");
   } catch (err) {
-    showPopup({
-      title: "Push error",
-      message: err?.message || "เกิดข้อผิดพลาดระหว่างตั้งค่า push",
-      mode: "alert",
-      confirmText: "ตกลง"
-    });
-
+    alert("PUSH CATCH ERROR: " + (err?.message || err));
     console.error("Push error:", err);
   }
 }
