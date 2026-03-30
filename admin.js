@@ -308,14 +308,18 @@ function getOtMinutesForRecord(baseDate, attendanceRecord) {
   if (!checkOutDate) return 0;
 
   const otStart = new Date(baseDate);
-  const endOfDay = new Date(baseDate);
-  endOfDay.setHours(23, 59, 59, 999);
 
-  const nextDaySix = new Date(baseDate);
-  nextDaySix.setDate(nextDaySix.getDate() + 1);
-  nextDaySix.setHours(6, 0, 0, 0);
+  const nextDayTen = new Date(baseDate);
+  nextDayTen.setDate(nextDayTen.getDate() + 1);
+  nextDayTen.setHours(10, 0, 0, 0);
 
-  if (isSunday(baseDate)) {
+  // 🔥 วันหยุด = อาทิตย์
+  const isHoliday =
+    isSunday(baseDate) ||
+    getFixedThaiHolidayLabel(baseDate) ||
+    getCompanyHolidayName(baseDate);
+
+  if (isHoliday) {
     otStart.setHours(8, 0, 0, 0);
   } else {
     otStart.setHours(18, 0, 0, 0);
@@ -323,8 +327,9 @@ function getOtMinutesForRecord(baseDate, attendanceRecord) {
 
   let effectiveEnd = checkOutDate;
 
-  if (checkOutDate >= nextDaySix) {
-    effectiveEnd = endOfDay;
+  // 🔥 cap ที่ 10:00
+  if (checkOutDate >= nextDayTen) {
+    effectiveEnd = nextDayTen;
   }
 
   if (effectiveEnd <= otStart) return 0;

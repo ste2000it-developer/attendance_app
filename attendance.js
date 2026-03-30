@@ -306,16 +306,10 @@ function getInclusiveDays(startYmd, endYmd) {
 
 function getWorkdayBaseDate(date) {
   const base = new Date(date);
-  const hour = base.getHours();
-  const minute = base.getMinutes();
 
-  const isBeforeReset = hour < 6 || (hour === 6 && minute === 0);
-
-  if (isBeforeReset) {
-    base.setDate(base.getDate() - 1);
-  }
-
+  // 🔥 วันใหม่ = 00:00 จริง
   base.setHours(0, 0, 0, 0);
+
   return base;
 }
 
@@ -490,7 +484,7 @@ function getAutoCheckoutThreshold(workdayKey) {
   const workdayDate = getWorkdayDateFromKey(workdayKey);
   const threshold = new Date(workdayDate);
   threshold.setDate(threshold.getDate() + 1);
-  threshold.setHours(6, 1, 0, 0);
+  threshold.setHours(10, 0, 0, 0);
   return threshold;
 }
 
