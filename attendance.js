@@ -1834,10 +1834,6 @@ window.addEventListener("beforeunload", () => {
   if (watchId !== null) {
     navigator.geolocation.clearWatch(watchId);
   }
-
-  if (user) {
-  initPush(user); // 🔥 ADD THIS
-}
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -1906,6 +1902,7 @@ onAuthStateChanged(auth, async (user) => {
 
     await sleep(250);
     hideAppLoading();
+    await initPush(user);
   } catch (error) {
     console.error(error);
 
@@ -1942,10 +1939,20 @@ onAuthStateChanged(auth, async (user) => {
     });
   }
 });
-// 🔥 PUSH SETUP (ADD ONLY)
+const PUSH_VAPID_KEY = "BH7h0sgilna9qAOdWTNaDMGDWuvOElzjtxNAOuHWTrQpIyp04N4hXL7Rf7U02bkzln59HIeOHQ9zddxtyWWAAQc";
 
 async function initPush(user) {
   try {
+    if (!messaging) {
+      console.log("Push messaging not supported");
+      return;
+    }
+
+    if (!("Notification" in window)) {
+      console.log("Notification API not supported");
+      return;
+    }
+
     const permission = await Notification.requestPermission();
 
     if (permission !== "granted") {
@@ -1953,8 +1960,11 @@ async function initPush(user) {
       return;
     }
 
+    const registration = await navigator.serviceWorker.ready;
+
     const token = await getToken(messaging, {
-      vapidKey: "BH7h0sgilna9qAOdWTNaDMGDWuvOElzjtxNAOuHWTrQpIyp04N4hXL7Rf7U02bkzln59HIeOHQ9zddxtyWWAAQc"
+      vapidKey: PUSH_VAPID_KEY,
+      serviceWorkerRegistration: registration
     });
 
     if (!token) {
@@ -1964,24 +1974,30 @@ async function initPush(user) {
 
     console.log("✅ TOKEN:", token);
 
-    // 🔥 เซฟลง Firestore
+    const userDoc = await getUserDocByUid(user.uid);
+
     await setDoc(
-      doc(db, "users", user.uid),
-      { pushToken: token },
+      doc(db, "users", userDoc.id),
+      {
+        pushToken: token,
+        pushUpdatedAt: new Date().toISOString()
+      },
       { merge: true }
     );
-
   } catch (err) {
     console.error("Push error:", err);
   }
 }
 
-// 🔥 รับ push ตอนเปิดแอพ
-onMessage(messaging, (payload) => {
-  console.log("📩 foreground:", payload);
+if (messaging) {
+  onMessage(messaging, (payload) => {
+    console.log("📩 foreground:", payload);
 
-  alert(
-    payload.notification?.title + "\n" +
-    payload.notification?.body
-  );
-});
+    showPopup({
+      title: payload?.notification?.title || "แจ้งเตือน",
+      message: payload?.notification?.body || "",
+      mode: "alert",
+      confirmText: "ตกลง"
+    });
+  });
+}
