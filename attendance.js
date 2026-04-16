@@ -383,6 +383,15 @@ function getCheckInStatus(date) {
 function getCheckoutStatus(date) {
   const hour = date.getHours();
 
+  const isHoliday =
+    isSunday(getWorkdayBaseDate(date)) ||
+    getFixedThaiHolidayName(getWorkdayBaseDate(date)) ||
+    getCompanyHolidayName(getWorkdayBaseDate(date));
+
+  if (isHoliday) {
+    return "OT";
+  }
+
   if (hour >= 18) {
     return "OT";
   }
