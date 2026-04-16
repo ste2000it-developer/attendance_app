@@ -892,6 +892,7 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayM
   const dateKey = getDateKey(date);
   const companyHolidayName = companyHolidayMap.get(dateKey);
   const fixedHolidayName = getFixedThaiHolidayLabel(date);
+  const sundayHoliday = isSunday(date);
 
   if (approvedLeaveSet.has(dateKey)) {
     return {
@@ -906,46 +907,47 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayM
     };
   }
 
-  if (companyHolidayName) {
-    return {
-      dateKey,
-      status: "วันหยุด",
-      checkIn: "-",
-      checkOut: "-",
-      siteIn: "-",
-      siteOut: "-",
-      note: companyHolidayName,
-      otMinutes: 0
-    };
-  }
-
-  if (fixedHolidayName) {
-    return {
-      dateKey,
-      status: "วันหยุด",
-      checkIn: "-",
-      checkOut: "-",
-      siteIn: "-",
-      siteOut: "-",
-      note: fixedHolidayName,
-      otMinutes: 0
-    };
-  }
-
-  if (isSunday(date)) {
-    return {
-      dateKey,
-      status: "วันหยุด",
-      checkIn: "-",
-      checkOut: "-",
-      siteIn: "-",
-      siteOut: "-",
-      note: "วันอาทิตย์",
-      otMinutes: 0
-    };
-  }
-
+  // ถ้าไม่มีการเข้างาน และเป็นวันหยุด → แสดงเป็นวันหยุดตามเดิม
   if (!attendanceRecord || !attendanceRecord.checkInTime) {
+    if (companyHolidayName) {
+      return {
+        dateKey,
+        status: "วันหยุด",
+        checkIn: "-",
+        checkOut: "-",
+        siteIn: "-",
+        siteOut: "-",
+        note: companyHolidayName,
+        otMinutes: 0
+      };
+    }
+
+    if (fixedHolidayName) {
+      return {
+        dateKey,
+        status: "วันหยุด",
+        checkIn: "-",
+        checkOut: "-",
+        siteIn: "-",
+        siteOut: "-",
+        note: fixedHolidayName,
+        otMinutes: 0
+      };
+    }
+
+    if (sundayHoliday) {
+      return {
+        dateKey,
+        status: "วันหยุด",
+        checkIn: "-",
+        checkOut: "-",
+        siteIn: "-",
+        siteOut: "-",
+        note: "วันอาทิตย์",
+        otMinutes: 0
+      };
+    }
+
     return {
       dateKey,
       status: "-",
@@ -958,6 +960,7 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayM
     };
   }
 
+  // ถ้ามีการเข้างานจริง แม้เป็นวันหยุด ก็ต้องคำนวณ OT
   const otMinutes = getOtMinutesForRecord(date, attendanceRecord);
   const isLate = attendanceRecord.checkInStatus === "สาย";
   const hasOt = otMinutes > 0;
@@ -967,13 +970,19 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayM
   else if (isLate) status = "สาย";
   else if (hasOt) status = "OT";
 
-  let note = attendanceRecord.autoCheckedOut ? "ตัดอัตโนมัติ" : "-";
+  const holidayNote =
+    companyHolidayName ||
+    fixedHolidayName ||
+    (sundayHoliday ? "วันอาทิตย์" : "");
 
-  if (otMinutes > 0) {
-    note =
-      note === "-"
-        ? `OT ${formatOtMinutes(otMinutes)}`
-        : `${note} · OT ${formatOtMinutes(otMinutes)}`;
+  const noteParts = [];
+
+  if (attendanceRecord.autoCheckedOut) {
+    noteParts.push("ระบบตัดเลิกงานอัตโนมัติ");
+  }
+
+  if (holidayNote) {
+    noteParts.push(`ทำงานในวันหยุด (${holidayNote})`);
   }
 
   return {
@@ -983,7 +992,7 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayM
     checkOut: attendanceRecord.checkOutLabel || "-",
     siteIn: attendanceRecord.siteIn || "-",
     siteOut: attendanceRecord.siteOut || "-",
-    note,
+    note: noteParts.length ? noteParts.join(" • ") : "-",
     otMinutes
   };
 }
