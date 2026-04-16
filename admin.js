@@ -237,6 +237,12 @@ function getFixedThaiHolidayLabel(date) {
   return FIXED_THAI_HOLIDAYS[getMonthDayKey(date)] || null;
 }
 
+function getCompanyHolidayName(date) {
+  const dateKey = getDateKey(date);
+  const found = holidayItems.find((item) => item.date === dateKey);
+  return found ? (found.name || "วันหยุดบริษัท") : null;
+}
+
 function getReportRangeFromMonth(monthValue) {
   const [year, month] = monthValue.split("-").map(Number);
   const start = new Date(year, month - 2, 25);
