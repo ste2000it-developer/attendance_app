@@ -321,6 +321,10 @@ function getWorkdayKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+function isSunday(date) {
+  return date.getDay() === 0;
+}
+
 function getNoonMoment(date) {
   const noon = new Date(date);
   noon.setHours(12, 0, 0, 0);
