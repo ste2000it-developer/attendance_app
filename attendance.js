@@ -68,7 +68,7 @@ const leaveHistoryList = document.getElementById("leaveHistoryList");
 const holidayListEl = document.getElementById("holidayList");
 
 const ADMIN_PIN = "1234";
-const LEAVE_ATTACHMENT_MAX_MB = 2;
+const LEAVE_ATTACHMENT_MAX_MB = 0.7;
 
 const LEAVE_TYPES = {
   annual: {
@@ -979,9 +979,52 @@ function readFileAsDataUrl(file) {
       return;
     }
 
+    if (!file.type.startsWith("image/")) {
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const img = new Image();
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+
+    reader.onload = () => {
+      img.src = reader.result;
+    };
+
     reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+
+      const maxSize = 900;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height && width > maxSize) {
+        height = Math.round((height * maxSize) / width);
+        width = maxSize;
+      } else if (height > maxSize) {
+        width = Math.round((width * maxSize) / height);
+        height = maxSize;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.68);
+      resolve(compressedDataUrl);
+    };
+
+    img.onerror = () => reject(new Error("IMAGE_COMPRESS_FAILED"));
+
     reader.readAsDataURL(file);
   });
 }
