@@ -1671,9 +1671,17 @@ function updateProfile(user) {
 
   if (profileAvatarEl) {
     const avatarName = encodeURIComponent(currentEmployeeName || user?.email || "EMPLOYEE");
-
-    profileAvatarEl.src =
+    const fallbackAvatar =
       `https://ui-avatars.com/api/?name=${avatarName}&background=0b3188&color=ffffff&size=256`;
+
+    profileAvatarEl.onerror = () => {
+      profileAvatarEl.onerror = null;
+      profileAvatarEl.src = fallbackAvatar;
+    };
+
+    profileAvatarEl.src = currentEmployeeCode
+      ? `./images/profiles/${currentEmployeeCode}.jpg`
+      : fallbackAvatar;
   }
 }
 
