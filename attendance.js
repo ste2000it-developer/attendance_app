@@ -30,8 +30,11 @@ const homeTabBtn = document.getElementById("homeTabBtn");
 const profileTabBtn = document.getElementById("profileTabBtn");
 const leaveTabBtn = document.getElementById("leaveTabBtn");
 
-const profileEmailEl = document.getElementById("profileEmail");
-const profileUidEl = document.getElementById("profileUid");
+const profileAvatarEl = document.getElementById("profileAvatar");
+const profileNameEl = document.getElementById("profileName");
+const profileEmployeeCodeEl = document.getElementById("profileEmployeeCode");
+const profileDepartmentEl = document.getElementById("profileDepartment");
+const profilePositionEl = document.getElementById("profilePosition");
 const logoutBtn = document.getElementById("logoutBtn");
 
 const popupOverlay = document.getElementById("popupOverlay");
@@ -418,6 +421,8 @@ function setButtonState(type, text, disabled) {
     "state-checkin",
     "state-countdown",
     "state-checkout",
+
+        "state-checkout",
     "state-complete"
   );
 
@@ -793,7 +798,8 @@ function generateUpcomingHolidays() {
     if (group.length === 0) return;
 
     const first = group[0];
-    const last = group[group.length - 1];
+
+      const last = group[group.length - 1];
 
     const start = parseYmdToLocalDate(first.date);
     const end = parseYmdToLocalDate(last.date);
@@ -1267,7 +1273,6 @@ async function saveAttendanceRecord(data) {
 
   await loadAttendanceRecord();
 }
-
 async function saveAttendanceRecordByKey(workdayKey, data) {
   const dayRef = getAttendanceDayRef(currentEmployeeCode, workdayKey);
 
@@ -1659,8 +1664,17 @@ function setActiveSection(sectionName) {
 }
 
 function updateProfile(user) {
-  profileEmailEl.textContent = user?.email || "-";
-  profileUidEl.textContent = user?.uid || "-";
+  profileNameEl.textContent = currentEmployeeName || "-";
+  profileEmployeeCodeEl.textContent = currentEmployeeCode || "-";
+  profileDepartmentEl.textContent = currentEmployeeDepartment || "-";
+  profilePositionEl.textContent = currentEmployeePosition || "-";
+
+  if (profileAvatarEl) {
+    const avatarName = encodeURIComponent(currentEmployeeName || user?.email || "EMPLOYEE");
+
+    profileAvatarEl.src =
+      `https://ui-avatars.com/api/?name=${avatarName}&background=0b3188&color=ffffff&size=256`;
+  }
 }
 
 async function autoCheckoutRecord(record) {
@@ -1866,10 +1880,10 @@ onAuthStateChanged(auth, async (user) => {
 
     setAppLoading("กำลังโหลดข้อมูลพนักงาน...");
 
-    updateProfile(user);
     updateClockUI();
 
     await loadEmployeeInfo(user.uid);
+    updateProfile(user);
 
     setAppLoading("กำลังเตรียมข้อมูลการตอกบัตร...");
     await ensureAttendanceRootDoc();
