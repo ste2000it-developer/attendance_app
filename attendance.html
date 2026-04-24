@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <title>Attendance</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0b3188">
+
+  <link rel="stylesheet" href="attendance.css">
+</head>
+
+<body>
+  <div class="attendance-app">
+    <main class="main-content">
+
+      <section id="homeSection" class="page-section active">
+        <div class="home-shell">
+          <section class="time-card">
+            <div class="time-card-header">
+              <span class="material-symbols-outlined">schedule</span>
+              <p class="time-card-title">เวลาปัจจุบัน</p>
+            </div>
+
+            <p id="currentTime" class="current-time">--:--:--</p>
+
+            <div class="divider"></div>
+
+            <p id="currentDate" class="current-date">--</p>
+
+            <div class="work-time-row">
+              <div class="work-time-item">
+                <span class="work-time-label">เข้างาน:</span>
+                <span id="checkInDisplay" class="work-time-value">--:--</span>
+              </div>
+
+              <div class="work-time-item">
+                <span class="work-time-label">เลิกงาน:</span>
+                <span id="checkOutDisplay" class="work-time-value">--:--</span>
+              </div>
+            </div>
+          </section>
+
+          <div class="location-row">
+            <svg
+              class="map-pin-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"
+                fill="#d80000"
+              ></path>
+              <circle cx="12" cy="10" r="2.7" fill="#ffffff"></circle>
+            </svg>
+
+            <p class="location-text">
+              <span class="location-label">สถานที่:</span>
+              <span id="siteDisplay" class="location-value">กำลังตรวจตำแหน่ง...</span>
+            </p>
+          </div>
+
+          <button id="mainActionBtn" class="main-action-btn state-checkin">
+            เข้างาน
+          </button>
+
+          <div class="logic-only">
+            <p id="statusText">ยังไม่ได้เข้างาน</p>
+            <p id="subStatusText">พร้อมเริ่มงาน</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="profileSection" class="page-section">
+        <div class="employee-card">
+          <div class="employee-card-top">
+            <p class="company-name">S.TUNTIVIVAT ENGINEERING 2000</p>
+            <p class="company-subtitle">EMPLOYEE PROFILE</p>
+          </div>
+
+          <div class="employee-card-body">
+            <div class="profile-line">
+              <span class="profile-label">Email</span>
+              <span id="profileEmail" class="profile-value">-</span>
+            </div>
+
+            <div class="profile-line">
+              <span class="profile-label">UID</span>
+              <span id="profileUid" class="profile-value">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-actions">
+          <button id="logoutBtn" class="logout-btn">ออกจากระบบ</button>
+        </div>
+      </section>
+
+      <section id="leaveSection" class="page-section">
+        <div class="leave-shell">
+          <div class="leave-card">
+            <div class="leave-card-header">
+              <h2>ยื่นใบลา</h2>
+              <p>กรอกข้อมูลให้ครบก่อนส่งคำขอ</p>
+            </div>
+<!-- 🔥 Holiday Card -->
+<div class="holiday-card">
+  <div class="holiday-card-header">
+    <span>วันหยุดที่กำลังจะมาถึง</span>
+  </div>
+
+  <div id="holidayList" class="holiday-list">
+    <div class="holiday-empty">กำลังโหลด...</div>
+  </div>
+</div>
+            <div class="leave-employee-card">
+              <div class="leave-employee-grid">
+                <div class="leave-info-item">
+                  <span class="leave-info-label">ชื่อ - นามสกุล</span>
+                  <span id="leaveEmployeeName" class="leave-info-value">-</span>
+                </div>
+                <div class="leave-info-item">
+                  <span class="leave-info-label">รหัสพนักงาน</span>
+                  <span id="leaveEmployeeCode" class="leave-info-value">-</span>
+                </div>
+                <div class="leave-info-item">
+                  <span class="leave-info-label">แผนก</span>
+                  <span id="leaveEmployeeDepartment" class="leave-info-value">-</span>
+                </div>
+                <div class="leave-info-item">
+                  <span class="leave-info-label">ตำแหน่ง</span>
+                  <span id="leaveEmployeePosition" class="leave-info-value">-</span>
+                </div>
+              </div>
+            </div>
+
+            <form id="leaveForm" class="leave-form" novalidate>
+              <div class="leave-form-group">
+                <label for="leaveTypeSelect" class="leave-label">ประเภทการลา</label>
+                <select id="leaveTypeSelect" class="leave-input" required>
+                  <option value="">เลือกประเภทการลา</option>
+                  <option value="annual">ลาพักร้อนประจำปี</option>
+                  <option value="sick">ลาป่วย</option>
+                  <option value="training">ลาเพื่อฝึกอบรม/พัฒนาความรู้</option>
+                  <option value="military">ลารับราชการทหาร</option>
+                  <option value="ordination">ลาอุปสมบท</option>
+                  <option value="maternity">ลาคลอด</option>
+                  <option value="sterilization">ลาเพื่อทำหมัน</option>
+                  <option value="unpaid_personal">ลากิจโดยไม่รับค่าจ้าง</option>
+                  <option value="emergency">ลาฉุกเฉิน</option>
+                  <option value="other">อื่นๆ</option>
+                </select>
+              </div>
+
+              <div class="leave-date-grid">
+                <div class="leave-form-group">
+                  <label for="leaveStartDate" class="leave-label">วันเริ่มลา</label>
+                  <input id="leaveStartDate" type="date" class="leave-input" required>
+                </div>
+
+                <div class="leave-form-group">
+                  <label for="leaveEndDate" class="leave-label">วันสิ้นสุดลา</label>
+                  <input id="leaveEndDate" type="date" class="leave-input" required>
+                </div>
+              </div>
+
+              <div class="leave-meta-row">
+                <div class="leave-meta-card">
+                  <span class="leave-meta-label">จำนวนวันลา</span>
+                  <span id="leaveTotalDays" class="leave-meta-value">0 วัน</span>
+                </div>
+
+                <div class="leave-meta-card">
+                  <span class="leave-meta-label">เงื่อนไข</span>
+                  <span id="leaveRuleHint" class="leave-meta-value leave-meta-value-small">เลือกประเภทการลา</span>
+                </div>
+              </div>
+
+              <div class="leave-form-group">
+                <label for="leaveNote" class="leave-label">หมายเหตุ</label>
+                <textarea
+                  id="leaveNote"
+                  class="leave-textarea"
+                  rows="4"
+                  placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"
+                ></textarea>
+                <p id="leaveNoteHint" class="leave-field-hint">ลาฉุกเฉินและอื่นๆ ต้องกรอกหมายเหตุ</p>
+              </div>
+
+              <div class="leave-form-group">
+                <label for="leaveAttachment" class="leave-label">แนบเอกสาร (ไม่บังคับ)</label>
+                <input id="leaveAttachment" type="file" class="leave-file-input" accept=".jpg,.jpeg,.png,.pdf">
+                <p id="leaveAttachmentName" class="leave-file-name">ยังไม่ได้เลือกไฟล์</p>
+              </div>
+
+              <button id="submitLeaveBtn" type="submit" class="leave-submit-btn">
+                ส่งคำขอลา
+              </button>
+            </form>
+          </div>
+
+          <div class="leave-card leave-history-card">
+            <div class="leave-card-header">
+              <h2>ประวัติการลา</h2>
+              <p>ดูสถานะคำขอลาย้อนหลัง</p>
+            </div>
+
+            <div id="leaveHistoryLoading" class="leave-history-loading">กำลังโหลดประวัติการลา...</div>
+            <div id="leaveHistoryList" class="leave-history-list"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  
+<nav class="bottom-nav">
+
+  <button id="profileTabBtn" class="nav-btn" type="button">
+    <span class="nav-icon material-symbols-outlined">person</span>
+    <span class="nav-text">โปรไฟล์</span>
+  </button>
+
+  <button id="homeTabBtn" class="nav-btn nav-btn-center active" type="button">
+    <span class="nav-icon material-symbols-outlined">home</span>
+    <span class="nav-text">หน้าหลัก</span>
+  </button>
+
+  <button id="leaveTabBtn" class="nav-btn" type="button">
+    <span class="nav-icon material-symbols-outlined">description</span>
+    <span class="nav-text">ใบลา</span>
+  </button>
+
+</nav>
+  </div>
+
+  <div id="appLoadingOverlay" class="app-loading-overlay">
+    <div class="app-loading-card">
+      <div class="app-loading-spinner"></div>
+      <p class="app-loading-title">กำลังโหลดข้อมูล</p>
+      <p id="appLoadingText" class="app-loading-text">กรุณารอสักครู่...</p>
+    </div>
+  </div>
+
+  <div id="popupOverlay" class="popup-overlay hidden">
+    <div class="popup-card">
+      <p id="popupTitle" class="popup-title">สำเร็จ</p>
+      <p id="popupMessage" class="popup-message">ข้อความ</p>
+
+      <div id="popupActions" class="popup-actions">
+        <button id="popupCancelBtn" class="popup-btn popup-btn-secondary">ยกเลิก</button>
+        <button id="popupConfirmBtn" class="popup-btn popup-btn-primary">ตกลง</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="attendance.js"></script>
+</body>
+</html>
