@@ -1,5 +1,3 @@
-
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth,
@@ -24,6 +22,13 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCJiQv3qKiOu1xyCp81pofQmEul_ceecKY",
   authDomain: "company-backends.firebaseapp.com",
@@ -36,12 +41,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 await setPersistence(auth, browserLocalPersistence);
 
 export {
   auth,
   db,
+  storage,
   doc,
   getDoc,
   getDocs,
@@ -52,6 +59,9 @@ export {
   query,
   where,
   serverTimestamp,
+  ref,
+  uploadBytes,
+  getDownloadURL,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut
