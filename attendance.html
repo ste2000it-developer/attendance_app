@@ -79,8 +79,15 @@
 
       <section id="profileSection" class="page-section">
         <div class="employee-card">
+
           <div class="employee-card-top">
-            <div class="profile-avatar-wrap">
+            <p class="company-name">S.TUNTIVIVAT ENGINEERING 2000</p>
+            <p class="company-subtitle">EMPLOYEE ID CARD</p>
+          </div>
+
+          <div class="employee-card-body">
+
+            <div class="profile-photo-area">
               <img
                 id="profileAvatar"
                 class="profile-avatar"
@@ -89,30 +96,34 @@
               >
             </div>
 
-            <p class="company-name">S.TUNTIVIVAT ENGINEERING 2000</p>
-            <p class="company-subtitle">EMPLOYEE PROFILE</p>
-          </div>
+            <div class="profile-info-area">
 
-          <div class="employee-card-body">
-            <div class="profile-line">
-              <span class="profile-label">ชื่อพนักงาน</span>
-              <span id="profileName" class="profile-value">-</span>
+              <div class="profile-line profile-line-name">
+                <span id="profileName" class="profile-name-value">-</span>
+              </div>
+
+              <div class="profile-line">
+                <span class="profile-label">EMP ID</span>
+                <span id="profileEmployeeCode" class="profile-value">-</span>
+              </div>
+
+              <div class="profile-line">
+                <span class="profile-label">DEPARTMENT</span>
+                <span id="profileDepartment" class="profile-value">-</span>
+              </div>
+
+              <div class="profile-line">
+                <span class="profile-label">POSITION</span>
+                <span id="profilePosition" class="profile-value">-</span>
+              </div>
+
+              <div class="profile-line">
+                <span class="profile-label">ISSUE DATE</span>
+                <span id="profileIssueDate" class="profile-value">-</span>
+              </div>
+
             </div>
 
-            <div class="profile-line">
-              <span class="profile-label">รหัสพนักงาน</span>
-              <span id="profileEmployeeCode" class="profile-value">-</span>
-            </div>
-
-            <div class="profile-line">
-              <span class="profile-label">แผนก</span>
-              <span id="profileDepartment" class="profile-value">-</span>
-            </div>
-
-            <div class="profile-line">
-              <span class="profile-label">ตำแหน่ง</span>
-              <span id="profilePosition" class="profile-value">-</span>
-            </div>
           </div>
         </div>
 
@@ -128,30 +139,34 @@
               <h2>ยื่นใบลา</h2>
               <p>กรอกข้อมูลให้ครบก่อนส่งคำขอ</p>
             </div>
-<!-- 🔥 Holiday Card -->
-<div class="holiday-card">
-  <div class="holiday-card-header">
-    <span>วันหยุดที่กำลังจะมาถึง</span>
-  </div>
 
-  <div id="holidayList" class="holiday-list">
-    <div class="holiday-empty">กำลังโหลด...</div>
-  </div>
-</div>
+            <div class="holiday-card">
+              <div class="holiday-card-header">
+                <span>วันหยุดที่กำลังจะมาถึง</span>
+              </div>
+
+              <div id="holidayList" class="holiday-list">
+                <div class="holiday-empty">กำลังโหลด...</div>
+              </div>
+            </div>
+
             <div class="leave-employee-card">
               <div class="leave-employee-grid">
                 <div class="leave-info-item">
                   <span class="leave-info-label">ชื่อ - นามสกุล</span>
                   <span id="leaveEmployeeName" class="leave-info-value">-</span>
                 </div>
+
                 <div class="leave-info-item">
                   <span class="leave-info-label">รหัสพนักงาน</span>
                   <span id="leaveEmployeeCode" class="leave-info-value">-</span>
                 </div>
+
                 <div class="leave-info-item">
                   <span class="leave-info-label">แผนก</span>
                   <span id="leaveEmployeeDepartment" class="leave-info-value">-</span>
                 </div>
+
                 <div class="leave-info-item">
                   <span class="leave-info-label">ตำแหน่ง</span>
                   <span id="leaveEmployeePosition" class="leave-info-value">-</span>
@@ -238,25 +253,24 @@
 
     </main>
 
-  
-<nav class="bottom-nav">
+    <nav class="bottom-nav">
 
-  <button id="profileTabBtn" class="nav-btn" type="button">
-    <span class="nav-icon material-symbols-outlined">person</span>
-    <span class="nav-text">โปรไฟล์</span>
-  </button>
+      <button id="profileTabBtn" class="nav-btn" type="button">
+        <span class="nav-icon material-symbols-outlined">person</span>
+        <span class="nav-text">โปรไฟล์</span>
+      </button>
 
-  <button id="homeTabBtn" class="nav-btn nav-btn-center active" type="button">
-    <span class="nav-icon material-symbols-outlined">home</span>
-    <span class="nav-text">หน้าหลัก</span>
-  </button>
+      <button id="homeTabBtn" class="nav-btn nav-btn-center active" type="button">
+        <span class="nav-icon material-symbols-outlined">home</span>
+        <span class="nav-text">หน้าหลัก</span>
+      </button>
 
-  <button id="leaveTabBtn" class="nav-btn" type="button">
-    <span class="nav-icon material-symbols-outlined">description</span>
-    <span class="nav-text">ใบลา</span>
-  </button>
+      <button id="leaveTabBtn" class="nav-btn" type="button">
+        <span class="nav-icon material-symbols-outlined">description</span>
+        <span class="nav-text">ใบลา</span>
+      </button>
 
-</nav>
+    </nav>
   </div>
 
   <div id="appLoadingOverlay" class="app-loading-overlay">
