@@ -1728,7 +1728,8 @@ function updateProfile(user) {
   profileEmployeeCodeEl.textContent = currentEmployeeCode || "-";
   profileDepartmentEl.textContent = currentEmployeeDepartment || "-";
 profilePositionEl.textContent = currentEmployeePosition || "-";
-
+profileIssueDateEl.textContent = currentUserProfile?.issueDate || "-";
+  
   if (profileIssueDateEl) {
     profileIssueDateEl.textContent =
       currentUserProfile?.issueDate || "-";
