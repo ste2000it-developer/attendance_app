@@ -291,88 +291,121 @@ textarea {
 /* PROFILE */
 .employee-card {
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 28px;
   background: #ffffff;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(11, 49, 136, 0.06);
+  max-width: 360px;
+  margin: 0 auto;
 }
 
 .employee-card-top {
-  background: linear-gradient(135deg, #0b3188, #1547b4);
+  background: linear-gradient(180deg, #0b3188 0%, #1547b4 100%);
   color: #ffffff;
-  padding: 26px 20px 24px;
+  padding: 26px 18px 70px;
   text-align: center;
-}
-
-.profile-avatar-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.profile-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #ffffff;
-  border: 4px solid rgba(255, 255, 255, 0.92);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 .company-name {
   margin: 0;
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .company-subtitle {
-  margin: 10px 0 0;
-  font-size: 14px;
-  opacity: 0.9;
+  margin: 6px 0 0;
+  font-size: 12px;
+  opacity: 0.88;
   font-weight: 300;
+  letter-spacing: 1px;
 }
 
 .employee-card-body {
-  padding: 22px 20px;
+  padding: 0 22px 24px;
+}
+
+.profile-photo-area {
+  display: flex;
+  justify-content: center;
+  margin-top: -58px;
+  margin-bottom: 16px;
+}
+
+.profile-avatar {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffffff;
+  border: 5px solid #ffffff;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+.profile-info-area {
+  width: 100%;
 }
 
 .profile-line {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 18px;
+  padding: 12px 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid #edf1f7;
 }
 
 .profile-line:last-child {
-  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.profile-line-name {
+  align-items: center;
+  text-align: center;
+  padding: 4px 0 18px;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.profile-name-value {
+  font-size: 22px;
+  color: #111111;
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .profile-label {
-  font-size: 14px;
-  color: #8a8a8a;
-  font-weight: 300;
+  font-size: 12px;
+  color: #8b94a7;
+  font-weight: 400;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 .profile-value {
   font-size: 17px;
   color: #111111;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.4;
   word-break: break-word;
 }
 
 .profile-actions {
-  margin-top: 18px;
+  max-width: 360px;
+  margin: 18px auto 0;
 }
 
 .logout-btn {
   width: 100%;
   border: none;
-  border-radius: 20px;
+  border-radius: 18px;
   background: #0b3188;
   color: #ffffff;
-  padding: 18px;
-  font-size: 18px;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 500;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(11, 49, 136, 0.16);
 }
 
 /* LEAVE */
@@ -1115,6 +1148,40 @@ textarea {
     margin-top: 24px;
     font-size: 24px;
     padding: 21px 18px;
+  }
+
+  .employee-card {
+    max-width: 100%;
+    border-radius: 24px;
+  }
+
+  .employee-card-top {
+    padding: 24px 16px 64px;
+  }
+
+  .employee-card-body {
+    padding: 0 18px 22px;
+  }
+
+  .profile-photo-area {
+    margin-top: -54px;
+  }
+
+  .profile-avatar {
+    width: 104px;
+    height: 104px;
+  }
+
+  .profile-name-value {
+    font-size: 21px;
+  }
+
+  .profile-value {
+    font-size: 16px;
+  }
+
+  .profile-actions {
+    max-width: 100%;
   }
 
   .leave-card {
