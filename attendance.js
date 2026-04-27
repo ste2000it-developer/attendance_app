@@ -1726,6 +1726,8 @@ function setActiveSection(sectionName) {
 function updateProfile(user) {
   profileNameEl.textContent = currentEmployeeName || "-";
   profileEmployeeCodeEl.textContent = currentEmployeeCode || "-";
+  profileDepartmentEl.textContent = currentEmployeeDepartment || "-";
+profilePositionEl.textContent = currentEmployeePosition || "-";
 
   if (profileIssueDateEl) {
     profileIssueDateEl.textContent =
