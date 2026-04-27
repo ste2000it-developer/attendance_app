@@ -35,6 +35,7 @@ const profileNameEl = document.getElementById("profileName");
 const profileEmployeeCodeEl = document.getElementById("profileEmployeeCode");
 const profileDepartmentEl = document.getElementById("profileDepartment");
 const profilePositionEl = document.getElementById("profilePosition");
+const profileIssueDateEl = document.getElementById("profileIssueDate");
 const logoutBtn = document.getElementById("logoutBtn");
 
 const popupOverlay = document.getElementById("popupOverlay");
@@ -133,7 +134,6 @@ const FIXED_THAI_HOLIDAYS = {
   "04-14": "วันสงกรานต์",
   "04-15": "วันสงกรานต์",
   "05-01": "วันแรงงาน",
-  "05-04": "วันฉัตรมงคล",
   "06-03": "วันเฉลิมพระชนมพรรษาพระราชินี",
   "07-28": "วันเฉลิมพระชนมพรรษา ร.10",
   "08-12": "วันแม่",
@@ -1228,26 +1228,43 @@ async function loadEmployeeInfo(uid) {
   const userData = userDoc.data();
 
   currentEmployeeCode = userData.employeeId || userDoc.id || null;
+
   currentEmployeeName =
     userData.nameTH ||
     userData.fullName ||
     userData.name ||
     "-";
+
   currentEmployeeDepartment =
     userData.departmentTH ||
     userData.department ||
     "-";
+
   currentEmployeePosition =
     userData.positionTH ||
     userData.position ||
     "-";
+
+  let issueDate = "-";
+
+  if (userData.startDate) {
+    const raw = String(userData.startDate).trim();
+
+    if (raw.includes("-")) {
+      const [y, m, d] = raw.split("-");
+      issueDate = `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+    } else if (raw.includes("/")) {
+      issueDate = raw;
+    }
+  }
 
   currentUserProfile = {
     uid,
     employeeCode: currentEmployeeCode,
     nameTH: currentEmployeeName,
     departmentTH: currentEmployeeDepartment,
-    positionTH: currentEmployeePosition
+    positionTH: currentEmployeePosition,
+    issueDate
   };
 
   updateLeaveEmployeeUI();
@@ -1709,11 +1726,17 @@ function setActiveSection(sectionName) {
 function updateProfile(user) {
   profileNameEl.textContent = currentEmployeeName || "-";
   profileEmployeeCodeEl.textContent = currentEmployeeCode || "-";
-  profileDepartmentEl.textContent = currentEmployeeDepartment || "-";
-  profilePositionEl.textContent = currentEmployeePosition || "-";
+
+  if (profileIssueDateEl) {
+    profileIssueDateEl.textContent =
+      currentUserProfile?.issueDate || "-";
+  }
 
   if (profileAvatarEl) {
-    const avatarName = encodeURIComponent(currentEmployeeName || user?.email || "EMPLOYEE");
+    const avatarName = encodeURIComponent(
+      currentEmployeeName || user?.email || "EMPLOYEE"
+    );
+
     const fallbackAvatar =
       `https://ui-avatars.com/api/?name=${avatarName}&background=0b3188&color=ffffff&size=256`;
 
