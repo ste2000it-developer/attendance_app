@@ -68,7 +68,6 @@ const leaveHistoryLoading = document.getElementById("leaveHistoryLoading");
 const leaveHistoryList = document.getElementById("leaveHistoryList");
 const holidayListEl = document.getElementById("holidayList");
 
-const ADMIN_PIN = "1234";
 const LEAVE_ATTACHMENT_MAX_MB = 2;
 
 const LEAVE_TYPES = {
