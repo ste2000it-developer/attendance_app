@@ -307,3 +307,19 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{o
  .admin-popup-card{padding:21px 17px 16px}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Scalable list controls */
+.report-search-group{width:min(275px,100%)}
+.report-search-group input{appearance:none;-webkit-appearance:none}
+.report-toolbar .report-range-text{margin-left:auto}
+.approval-more-row{display:flex;justify-content:center;padding:13px 0 3px}
+.approval-more-btn{min-height:41px;padding:9px 18px;background:#f1f5ff;border:1px solid #d9e4fd;border-radius:9px;color:#2455bf;font-size:12px;font-weight:700}
+.approval-more-btn:hover{background:#e8f0ff}
+@media(max-width:750px){
+ .report-toolbar{justify-content:flex-start}
+ .report-search-group{width: min(260px,100%)}
+ .report-toolbar .report-range-text{flex-basis:100%;margin-left:0}
+}
+@media(max-width:560px){
+ .report-search-group{width:100%}
+}

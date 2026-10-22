@@ -32,6 +32,7 @@ const loadReportBtn = document.getElementById("loadReportBtn");
 const exportExcelBtn = document.getElementById("exportExcelBtn");
 
 const reportMonthInput = document.getElementById("reportMonthInput");
+const reportSearchInput = document.getElementById("reportSearchInput");
 const reportRangeText = document.getElementById("reportRangeText");
 const reportLoading = document.getElementById("reportLoading");
 const reportList = document.getElementById("reportList");
@@ -61,6 +62,8 @@ const adminPopupCancelBtn = document.getElementById("adminPopupCancelBtn");
 const adminPopupConfirmBtn = document.getElementById("adminPopupConfirmBtn");
 
 let approvalItems = [];
+let approvalVisibleLimit = 20;
+let visibleReportItems = [];
 let holidayItems = [];
 let isApprovalActionRunning = false;
 let currentView = "pending";
@@ -424,7 +427,7 @@ function renderApprovalList(items) {
     approvalListEl.innerHTML = `<div class="approval-empty">${currentView === "pending" ? "ไม่มีคำขอที่รออนุมัติ" : "ไม่พบรายการตามตัวกรองที่เลือก"}</div>`;
     return;
   }
-  approvalListEl.innerHTML = filteredItems.map((item) => {
+  approvalListEl.innerHTML = filteredItems.slice(0, approvalVisibleLimit).map((item) => {
     const noteHtml = item.note
       ? `<div class="approval-note"><strong>หมายเหตุ</strong> · ${escapeHtml(item.note)}</div>`
       : "";
@@ -458,7 +461,9 @@ function renderApprovalList(items) {
         </details>
         ${actionButtonsHtml}
       </article>`;
-  }).join("");
+  }).join("") + (filteredItems.length > approvalVisibleLimit
+    ? `<div class="approval-more-row"><button class="approval-more-btn" type="button" data-show-more-approvals>ดูเพิ่มเติม (${filteredItems.length - approvalVisibleLimit} รายการ)</button></div>`
+    : "");
 }
 
 function openDropdown() {
@@ -505,6 +510,7 @@ async function loadApprovalItems() {
         return bTime - aTime;
       });
 
+    approvalVisibleLimit = 20;
     updateApprovalSummary(approvalItems);
     const pending = approvalItems.filter((item) => item.status === "pending").length;
     const pendingOnHome = document.getElementById("homePendingCount");
@@ -565,6 +571,11 @@ async function updateLeaveStatus(leaveId, newStatus) {
 }
 
 function handleApprovalListClick(event) {
+  if (event.target.closest("[data-show-more-approvals]")) {
+    approvalVisibleLimit += 20;
+    renderApprovalList(approvalItems);
+    return;
+  }
   const actionBtn = event.target.closest("[data-leave-id][data-action]");
 
   if (!actionBtn) return;
@@ -949,74 +960,92 @@ function computeDayRow(date, attendanceRecord, approvedLeaveSet, companyHolidayM
   };
 }
 
+function buildReportDayContent(employee) {
+  const rowsHtml = employee.rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(formatThaiDate(row.dateKey))}</td>
+      <td><span class="report-status-badge ${getReportStatusClass(row.status)}">${escapeHtml(row.status)}</span></td>
+      <td>${escapeHtml(row.checkIn)}</td><td>${escapeHtml(row.checkOut)}</td>
+      <td>${escapeHtml(row.siteIn)}</td><td>${escapeHtml(row.siteOut)}</td>
+      <td>${escapeHtml(row.note)}</td>
+    </tr>`).join("");
+
+  const mobileRowsHtml = employee.rows.map((row) => `
+    <details class="report-mobile-day">
+      <summary>
+        <span class="report-day-date">${escapeHtml(formatThaiDate(row.dateKey))}</span>
+        <span class="report-day-status report-status-badge ${getReportStatusClass(row.status)}">${escapeHtml(row.status)}</span>
+        <span class="report-day-time">เข้า <b>${escapeHtml(row.checkIn)}</b> · ออก <b>${escapeHtml(row.checkOut)}</b></span>
+      </summary>
+      <dl class="report-day-extra">
+        <div><dt>สถานที่เข้างาน</dt><dd>${escapeHtml(row.siteIn)}</dd></div>
+        <div><dt>สถานที่เลิกงาน</dt><dd>${escapeHtml(row.siteOut)}</dd></div>
+        <div><dt>หมายเหตุ</dt><dd>${escapeHtml(row.note)}</dd></div>
+      </dl>
+    </details>`).join("");
+
+  return `
+    <div class="report-table-wrap"><table class="report-table">
+      <thead><tr><th>วันที่</th><th>สถานะ</th><th>เข้างาน</th><th>เลิกงาน</th><th>เข้างานที่</th><th>เลิกงานที่</th><th>หมายเหตุ</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table></div>
+    <div class="report-mobile-days">${mobileRowsHtml}</div>`;
+}
+
 function renderReport(reportItems) {
+  visibleReportItems = reportItems;
   if (!reportItems.length) {
     reportList.innerHTML = `<div class="report-empty">ไม่พบข้อมูลพนักงานสำหรับรายงาน</div>`;
     return;
   }
 
-  reportList.innerHTML = reportItems.map((employee, index) => {
-    const rowsHtml = employee.rows.map((row) => `
-      <tr>
-        <td>${escapeHtml(formatThaiDate(row.dateKey))}</td>
-        <td><span class="report-status-badge ${getReportStatusClass(row.status)}">${escapeHtml(row.status)}</span></td>
-        <td>${escapeHtml(row.checkIn)}</td><td>${escapeHtml(row.checkOut)}</td>
-        <td>${escapeHtml(row.siteIn)}</td><td>${escapeHtml(row.siteOut)}</td>
-        <td>${escapeHtml(row.note)}</td>
-      </tr>`).join("");
-
-    const mobileRowsHtml = employee.rows.map((row) => `
-      <details class="report-mobile-day">
-        <summary>
-          <span class="report-day-date">${escapeHtml(formatThaiDate(row.dateKey))}</span>
-          <span class="report-day-status report-status-badge ${getReportStatusClass(row.status)}">${escapeHtml(row.status)}</span>
-          <span class="report-day-time">เข้า <b>${escapeHtml(row.checkIn)}</b> · ออก <b>${escapeHtml(row.checkOut)}</b></span>
-        </summary>
-        <dl class="report-day-extra">
-          <div><dt>สถานที่เข้างาน</dt><dd>${escapeHtml(row.siteIn)}</dd></div>
-          <div><dt>สถานที่เลิกงาน</dt><dd>${escapeHtml(row.siteOut)}</dd></div>
-          <div><dt>หมายเหตุ</dt><dd>${escapeHtml(row.note)}</dd></div>
-        </dl>
-      </details>`).join("");
-
-    return `
-      <article class="report-employee-card" data-report-card="${index}">
-        <button class="report-employee-toggle" type="button" data-report-toggle="${index}" aria-expanded="false" aria-controls="report-body-${index}">
-          <div class="report-employee-header">
-            <div><p class="report-employee-name">${escapeHtml(employee.name)}</p>
-              <p class="report-employee-sub">รหัส ${escapeHtml(employee.employeeCode)} · ${escapeHtml(employee.department)} · ${escapeHtml(employee.position)}</p>
-            </div>
-            <div class="report-mini-summary">
-              <span class="report-mini-badge">สาย ${employee.lateCount}</span>
-              <span class="report-mini-badge">OT ${escapeHtml(formatOtMinutes(employee.otMinutes))}</span>
-              <span class="report-mini-badge">ลา ${employee.leaveCount}</span>
-            </div>
+  // Build only employee headers; daily details are rendered when opened.
+  reportList.innerHTML = reportItems.map((employee, index) => `
+    <article class="report-employee-card" data-report-card="${index}">
+      <button class="report-employee-toggle" type="button" data-report-toggle="${index}" aria-expanded="false" aria-controls="report-body-${index}">
+        <div class="report-employee-header">
+          <div>
+            <p class="report-employee-name">${escapeHtml(employee.name)}</p>
+            <p class="report-employee-sub">รหัส ${escapeHtml(employee.employeeCode)} · ${escapeHtml(employee.department)} · ${escapeHtml(employee.position)}</p>
           </div>
-          <div class="report-toggle-row"><span class="report-toggle-text">ดูรายละเอียดรายวัน</span><span class="report-toggle-icon"><svg class="ui-icon" aria-hidden="true"><use href="#i-chevron"></use></svg></span></div>
-        </button>
-        <div class="report-employee-body" id="report-body-${index}">
-          <div class="report-table-wrap"><table class="report-table">
-            <thead><tr><th>วันที่</th><th>สถานะ</th><th>เข้างาน</th><th>เลิกงาน</th><th>เข้างานที่</th><th>เลิกงานที่</th><th>หมายเหตุ</th></tr></thead>
-            <tbody>${rowsHtml}</tbody>
-          </table></div>
-          <div class="report-mobile-days">${mobileRowsHtml}</div>
+          <div class="report-mini-summary">
+            <span class="report-mini-badge">สาย ${employee.lateCount}</span>
+            <span class="report-mini-badge">OT ${escapeHtml(formatOtMinutes(employee.otMinutes))}</span>
+            <span class="report-mini-badge">ลา ${employee.leaveCount}</span>
+          </div>
         </div>
-      </article>`;
-  }).join("");
+        <div class="report-toggle-row"><span class="report-toggle-text">ดูรายละเอียดรายวัน</span><span class="report-toggle-icon"><svg class="ui-icon" aria-hidden="true"><use href="#i-chevron"></use></svg></span></div>
+      </button>
+      <div class="report-employee-body" id="report-body-${index}"></div>
+    </article>`).join("");
 }
 
 function bindReportCardToggle() {
-  const toggleButtons = Array.from(document.querySelectorAll("[data-report-toggle]"));
-
-  toggleButtons.forEach((button) => {
+  reportList.querySelectorAll("[data-report-toggle]").forEach((button) => {
     button.addEventListener("click", () => {
-      const index = button.dataset.reportToggle;
-      const card = document.querySelector(`[data-report-card="${index}"]`);
+      const index = Number(button.dataset.reportToggle);
+      const card = reportList.querySelector(`[data-report-card="${index}"]`);
       if (!card) return;
+      const content = card.querySelector(".report-employee-body");
+      if (content && !content.dataset.loaded && visibleReportItems[index]) {
+        content.innerHTML = buildReportDayContent(visibleReportItems[index]);
+        content.dataset.loaded = "true";
+      }
       const isOpen = card.classList.toggle("open");
       button.setAttribute("aria-expanded", String(isOpen));
     });
   });
+}
+
+function renderFilteredReports() {
+  const keyword = (reportSearchInput?.value || "").trim().toLocaleLowerCase("th-TH");
+  const items = keyword
+    ? currentReportItems.filter((employee) =>
+        [employee.name, employee.employeeCode, employee.department, employee.position]
+          .some((part) => String(part || "").toLocaleLowerCase("th-TH").includes(keyword)))
+    : currentReportItems;
+  renderReport(items);
+  bindReportCardToggle();
 }
 
 function sanitizeSheetName(value) {
@@ -1585,55 +1614,42 @@ async function loadReport() {
     const companyHolidayMap = getCompanyHolidayMapInRange(start, end);
 
     const reportItems = [];
+    const batchSize = 4;
+    for (let offset = 0; offset < users.length; offset += batchSize) {
+      const batch = users.slice(offset, offset + batchSize);
+      const batchItems = await Promise.all(batch.map(async (user) => {
+        const employeeCode = user.employeeId || user.id;
+        const [attendanceMap, approvedLeaves] = await Promise.all([
+          loadAttendanceDaysForEmployee(employeeCode),
+          loadApprovedLeavesForUser(user.uid)
+        ]);
+        const approvedLeaveSet = getLeaveDaysSet(approvedLeaves, start, end);
 
-    for (const user of users) {
-      const employeeCode = user.employeeId || user.id;
-      const attendanceMap = await loadAttendanceDaysForEmployee(employeeCode);
-      const approvedLeaves = await loadApprovedLeavesForUser(user.uid);
-      const approvedLeaveSet = getLeaveDaysSet(approvedLeaves, start, end);
-
-      let lateCount = 0;
-      let otMinutes = 0;
-      let leaveCount = 0;
-
-      const rows = dates.map((date) => {
-        const row = computeDayRow(
-          date,
-          attendanceMap.get(getDateKey(date)),
-          approvedLeaveSet,
-          companyHolidayMap
-        );
-
-        if (row.status === "สาย" || row.status === "สาย + OT") {
-          lateCount += 1;
-        }
-
-        if (row.otMinutes > 0) {
-          otMinutes += row.otMinutes;
-        }
-
-        if (row.status === "ลา") {
-          leaveCount += 1;
-        }
-
-        return row;
-      });
-
-      reportItems.push({
-        employeeCode,
-        name: user.nameTH || user.fullName || user.name || "-",
-        department: user.departmentTH || user.department || "-",
-        position: user.positionTH || user.position || "-",
-        lateCount,
-        otMinutes,
-        leaveCount,
-        rows
-      });
+        let lateCount = 0;
+        let otMinutes = 0;
+        let leaveCount = 0;
+        const rows = dates.map((date) => {
+          const row = computeDayRow(date, attendanceMap.get(getDateKey(date)),
+            approvedLeaveSet, companyHolidayMap);
+          if (row.status === "สาย" || row.status === "สาย + OT") lateCount += 1;
+          if (row.otMinutes > 0) otMinutes += row.otMinutes;
+          if (row.status === "ลา") leaveCount += 1;
+          return row;
+        });
+        return {
+          employeeCode,
+          name: user.nameTH || user.fullName || user.name || "-",
+          department: user.departmentTH || user.department || "-",
+          position: user.positionTH || user.position || "-",
+          lateCount, otMinutes, leaveCount, rows
+        };
+      }));
+      reportItems.push(...batchItems);
+      reportLoading.textContent = `กำลังโหลดรายงาน... ${Math.min(offset + batchSize, users.length)}/${users.length} คน`;
     }
 
     currentReportItems = reportItems;
-    renderReport(reportItems);
-    bindReportCardToggle();
+    renderFilteredReports();
 
     reportLoading.style.display = "none";
   } catch (error) {
@@ -1726,6 +1742,10 @@ refreshHolidaysBtn.addEventListener("click", async () => {
   await loadHolidays();
 });
 
+reportSearchInput.addEventListener("input", () => {
+  if (currentReportItems.length) renderFilteredReports();
+});
+
 loadReportBtn.addEventListener("click", async () => {
   await loadReport();
 });
@@ -1749,6 +1769,7 @@ approvalDropdownBtn.addEventListener("click", (event) => {
 approvalDropdownItems.forEach((item) => {
   item.addEventListener("click", () => {
     currentView = item.dataset.view || "pending";
+    approvalVisibleLimit = 20;
     syncDropdownUI();
     closeDropdown();
     renderApprovalList(approvalItems);
