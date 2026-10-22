@@ -113,6 +113,22 @@ function showSection(sectionToShow) {
 
   sectionToShow.classList.add("active");
 
+  const labels = {
+    adminHomeSection: ["home", "ภาพรวม", "เลือกงานที่ต้องการจัดการได้จากเมนูด้านล่าง"],
+    reportsSection: ["reports", "รายงานการเข้างาน", "ตรวจสอบเวลาทำงานและส่งออกข้อมูลรายเดือน"],
+    approvalSection: ["approval", "จัดการคำขอลา", "ตรวจสอบและอนุมัติคำขอของพนักงาน"],
+    holidaysSection: ["holidays", "วันหยุดบริษัท", "กำหนดวันหยุดที่ใช้กับระบบลงเวลา"]
+  };
+  const [view, heading, subtitle] = labels[sectionToShow.id] || labels.adminHomeSection;
+  document.getElementById("adminPageTitle").textContent = heading;
+  document.getElementById("adminPageSubtitle").textContent = subtitle;
+  document.querySelectorAll("[data-admin-go]").forEach((button) => {
+    const selected = button.dataset.adminGo === view;
+    button.classList.toggle("active", selected);
+    if (selected) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+
   requestAnimationFrame(() => {
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
@@ -404,115 +420,45 @@ function getFilteredApprovalItems(items) {
 
 function renderApprovalList(items) {
   const filteredItems = getFilteredApprovalItems(items);
-
   if (!filteredItems.length) {
-    const emptyText =
-      currentView === "pending"
-        ? "ตอนนี้ไม่มีใบลาที่รออนุมัติ"
-        : "ไม่พบรายการตามตัวกรองที่เลือก";
-
-    approvalListEl.innerHTML = `
-      <div class="approval-empty">${emptyText}</div>
-    `;
+    approvalListEl.innerHTML = `<div class="approval-empty">${currentView === "pending" ? "ไม่มีคำขอที่รออนุมัติ" : "ไม่พบรายการตามตัวกรองที่เลือก"}</div>`;
     return;
   }
-
-  approvalListEl.innerHTML = filteredItems
-    .map((item) => {
-      const noteHtml = item.note
-        ? `<div class="approval-note">${escapeHtml(item.note)}</div>`
-        : "";
-
-      const attachmentHtml =
-        item.attachmentDataUrl && item.attachmentName
-          ? `
-            <div class="approval-attachment">
-              <a href="${item.attachmentDataUrl}" target="_blank" rel="noopener noreferrer">
-                ดูไฟล์แนบ: ${escapeHtml(item.attachmentName)}
-              </a>
-            </div>
-          `
-          : "";
-
-      const actionButtonsHtml =
-        currentView === "pending" && item.status === "pending"
-          ? `
-            <div class="approval-actions">
-              <button
-                class="action-btn action-btn-approve"
-                type="button"
-                data-leave-id="${escapeHtml(item.id)}"
-                data-action="approved"
-              >
-                อนุมัติ
-              </button>
-
-              <button
-                class="action-btn action-btn-reject"
-                type="button"
-                data-leave-id="${escapeHtml(item.id)}"
-                data-action="rejected"
-              >
-                ไม่อนุมัติ
-              </button>
-            </div>
-          `
-          : "";
-
-      return `
-        <div class="approval-item">
-          <div class="approval-item-top">
-            <div>
-              <p class="approval-name">${escapeHtml(item.nameTH || "-")}</p>
-              <p class="approval-type">${escapeHtml(item.leaveTypeLabel || "-")}</p>
-            </div>
-
-            <span class="approval-status-badge ${getApprovalStatusClass(item.status)}">
-              ${escapeHtml(getApprovalStatusLabel(item.status))}
-            </span>
-          </div>
-
-          <div class="approval-meta">
-            <div class="approval-meta-item">
-              <span class="approval-meta-label">รหัสพนักงาน</span>
-              <span class="approval-meta-value">${escapeHtml(item.employeeId || "-")}</span>
-            </div>
-
-            <div class="approval-meta-item">
-              <span class="approval-meta-label">จำนวนวัน</span>
-              <span class="approval-meta-value">${escapeHtml(item.totalDays || 0)} วัน</span>
-            </div>
-
-            <div class="approval-meta-item">
-              <span class="approval-meta-label">แผนก</span>
-              <span class="approval-meta-value">${escapeHtml(item.departmentTH || "-")}</span>
-            </div>
-
-            <div class="approval-meta-item">
-              <span class="approval-meta-label">ตำแหน่ง</span>
-              <span class="approval-meta-value">${escapeHtml(item.positionTH || "-")}</span>
-            </div>
-
-            <div class="approval-meta-item">
-              <span class="approval-meta-label">ช่วงวันลา</span>
-              <span class="approval-meta-value">
-                ${escapeHtml(formatThaiDate(item.startDate))} - ${escapeHtml(formatThaiDate(item.endDate))}
-              </span>
-            </div>
-
-            <div class="approval-meta-item">
-              <span class="approval-meta-label">วันที่ส่งคำขอ</span>
-              <span class="approval-meta-value">${escapeHtml(formatDateTimeThai(item.createdAt))}</span>
-            </div>
-          </div>
-
-          ${noteHtml}
-          ${attachmentHtml}
-          ${actionButtonsHtml}
+  approvalListEl.innerHTML = filteredItems.map((item) => {
+    const noteHtml = item.note
+      ? `<div class="approval-note"><strong>หมายเหตุ</strong> · ${escapeHtml(item.note)}</div>`
+      : "";
+    const attachmentHtml = item.attachmentDataUrl && item.attachmentName
+      ? `<div class="approval-attachment"><a href="${item.attachmentDataUrl}" target="_blank" rel="noopener noreferrer">ดูไฟล์แนบ: ${escapeHtml(item.attachmentName)}</a></div>`
+      : "";
+    const actionButtonsHtml = currentView === "pending" && item.status === "pending" ? `
+      <div class="approval-actions">
+        <button class="action-btn action-btn-reject" type="button" data-leave-id="${escapeHtml(item.id)}" data-action="rejected">ไม่อนุมัติ</button>
+        <button class="action-btn action-btn-approve" type="button" data-leave-id="${escapeHtml(item.id)}" data-action="approved">อนุมัติ</button>
+      </div>` : "";
+    return `
+      <article class="approval-item">
+        <div class="approval-item-top">
+          <div><p class="approval-name">${escapeHtml(item.nameTH || "-")}</p><p class="approval-type">${escapeHtml(item.leaveTypeLabel || "-")}</p></div>
+          <span class="approval-status-badge ${getApprovalStatusClass(item.status)}">${escapeHtml(getApprovalStatusLabel(item.status))}</span>
         </div>
-      `;
-    })
-    .join("");
+        <div class="approval-key-info">
+          <span><svg class="ui-icon" aria-hidden="true"><use href="#i-calendar"></use></svg><strong>${escapeHtml(formatThaiDate(item.startDate))} – ${escapeHtml(formatThaiDate(item.endDate))}</strong></span>
+          <span>${escapeHtml(item.totalDays ?? 0)} วัน</span>
+          <span>รหัส ${escapeHtml(item.employeeId || "-")}</span>
+        </div>
+        ${noteHtml}${attachmentHtml}
+        <details class="approval-more">
+          <summary>ข้อมูลเพิ่มเติม <svg class="ui-icon" aria-hidden="true"><use href="#i-chevron"></use></svg></summary>
+          <div class="approval-meta">
+            <div class="approval-meta-item"><span class="approval-meta-label">แผนก</span><span class="approval-meta-value">${escapeHtml(item.departmentTH || "-")}</span></div>
+            <div class="approval-meta-item"><span class="approval-meta-label">ตำแหน่ง</span><span class="approval-meta-value">${escapeHtml(item.positionTH || "-")}</span></div>
+            <div class="approval-meta-item"><span class="approval-meta-label">วันที่ส่งคำขอ</span><span class="approval-meta-value">${escapeHtml(formatDateTimeThai(item.createdAt))}</span></div>
+          </div>
+        </details>
+        ${actionButtonsHtml}
+      </article>`;
+  }).join("");
 }
 
 function openDropdown() {
@@ -560,6 +506,11 @@ async function loadApprovalItems() {
       });
 
     updateApprovalSummary(approvalItems);
+    const pending = approvalItems.filter((item) => item.status === "pending").length;
+    const pendingOnHome = document.getElementById("homePendingCount");
+    const pendingOnNav = document.getElementById("navPendingCount");
+    if (pendingOnHome) pendingOnHome.textContent = String(pending);
+    if (pendingOnNav) { pendingOnNav.textContent = String(pending); pendingOnNav.hidden = pending === 0; }
     syncDropdownUI();
     renderApprovalList(approvalItems);
 
@@ -662,8 +613,9 @@ function renderHolidayList(items) {
       return `
         <div class="holiday-item">
           <div>
-            <p class="holiday-name">${escapeHtml(item.name || "-")}</p>
-            <p class="holiday-date">${escapeHtml(formatThaiDate(item.date))}</p>
+            <span class="holiday-date-box"><svg class="ui-icon" aria-hidden="true"><use href="#i-calendar"></use></svg></span>
+            <div><p class="holiday-name">${escapeHtml(item.name || "-")}</p>
+            <p class="holiday-date">${escapeHtml(formatThaiDate(item.date))}</p></div>
           </div>
 
           <button
@@ -672,7 +624,7 @@ function renderHolidayList(items) {
             data-holiday-id="${escapeHtml(item.id)}"
             data-holiday-name="${escapeHtml(item.name || "")}"
           >
-            ลบ
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-trash"></use></svg><span>ลบ</span>
           </button>
         </div>
       `;
@@ -1003,76 +955,54 @@ function renderReport(reportItems) {
     return;
   }
 
-  reportList.innerHTML = reportItems
-    .map((employee, index) => {
-      const rowsHtml = employee.rows
-        .map((row) => {
-          return `
-            <tr>
-              <td>${escapeHtml(formatThaiDate(row.dateKey))}</td>
-              <td>
-                <span class="report-status-badge ${getReportStatusClass(row.status)}">
-                  ${escapeHtml(row.status)}
-                </span>
-              </td>
-              <td>${escapeHtml(row.checkIn)}</td>
-              <td>${escapeHtml(row.checkOut)}</td>
-              <td>${escapeHtml(row.siteIn)}</td>
-              <td>${escapeHtml(row.siteOut)}</td>
-              <td>${escapeHtml(row.note)}</td>
-            </tr>
-          `;
-        })
-        .join("");
+  reportList.innerHTML = reportItems.map((employee, index) => {
+    const rowsHtml = employee.rows.map((row) => `
+      <tr>
+        <td>${escapeHtml(formatThaiDate(row.dateKey))}</td>
+        <td><span class="report-status-badge ${getReportStatusClass(row.status)}">${escapeHtml(row.status)}</span></td>
+        <td>${escapeHtml(row.checkIn)}</td><td>${escapeHtml(row.checkOut)}</td>
+        <td>${escapeHtml(row.siteIn)}</td><td>${escapeHtml(row.siteOut)}</td>
+        <td>${escapeHtml(row.note)}</td>
+      </tr>`).join("");
 
-      return `
-        <div class="report-employee-card" data-report-card="${index}">
-          <button class="report-employee-toggle" type="button" data-report-toggle="${index}">
-            <div class="report-employee-header">
-              <div>
-                <p class="report-employee-name">${escapeHtml(employee.name)}</p>
-                <p class="report-employee-sub">
-                  รหัส: ${escapeHtml(employee.employeeCode)} · แผนก: ${escapeHtml(employee.department)} · ตำแหน่ง: ${escapeHtml(employee.position)}
-                </p>
-              </div>
+    const mobileRowsHtml = employee.rows.map((row) => `
+      <details class="report-mobile-day">
+        <summary>
+          <span class="report-day-date">${escapeHtml(formatThaiDate(row.dateKey))}</span>
+          <span class="report-day-status report-status-badge ${getReportStatusClass(row.status)}">${escapeHtml(row.status)}</span>
+          <span class="report-day-time">เข้า <b>${escapeHtml(row.checkIn)}</b> · ออก <b>${escapeHtml(row.checkOut)}</b></span>
+        </summary>
+        <dl class="report-day-extra">
+          <div><dt>สถานที่เข้างาน</dt><dd>${escapeHtml(row.siteIn)}</dd></div>
+          <div><dt>สถานที่เลิกงาน</dt><dd>${escapeHtml(row.siteOut)}</dd></div>
+          <div><dt>หมายเหตุ</dt><dd>${escapeHtml(row.note)}</dd></div>
+        </dl>
+      </details>`).join("");
 
-              <div class="report-mini-summary">
-                <span class="report-mini-badge">มาสาย ${employee.lateCount}</span>
-                <span class="report-mini-badge">OT ${escapeHtml(formatOtMinutes(employee.otMinutes))}</span>
-                <span class="report-mini-badge">ลา ${employee.leaveCount}</span>
-              </div>
+    return `
+      <article class="report-employee-card" data-report-card="${index}">
+        <button class="report-employee-toggle" type="button" data-report-toggle="${index}" aria-expanded="false" aria-controls="report-body-${index}">
+          <div class="report-employee-header">
+            <div><p class="report-employee-name">${escapeHtml(employee.name)}</p>
+              <p class="report-employee-sub">รหัส ${escapeHtml(employee.employeeCode)} · ${escapeHtml(employee.department)} · ${escapeHtml(employee.position)}</p>
             </div>
-
-            <div class="report-toggle-row">
-              <span class="report-toggle-text">กดเพื่อดูรายละเอียดรายวัน</span>
-              <span class="report-toggle-icon">⌄</span>
-            </div>
-          </button>
-
-          <div class="report-employee-body">
-            <div class="report-table-wrap">
-              <table class="report-table">
-                <thead>
-                  <tr>
-                    <th>วันที่</th>
-                    <th>สถานะ</th>
-                    <th>เข้างาน</th>
-                    <th>เลิกงาน</th>
-                    <th>เข้างานที่</th>
-                    <th>เลิกงานที่</th>
-                    <th>หมายเหตุ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rowsHtml}
-                </tbody>
-              </table>
+            <div class="report-mini-summary">
+              <span class="report-mini-badge">สาย ${employee.lateCount}</span>
+              <span class="report-mini-badge">OT ${escapeHtml(formatOtMinutes(employee.otMinutes))}</span>
+              <span class="report-mini-badge">ลา ${employee.leaveCount}</span>
             </div>
           </div>
+          <div class="report-toggle-row"><span class="report-toggle-text">ดูรายละเอียดรายวัน</span><span class="report-toggle-icon"><svg class="ui-icon" aria-hidden="true"><use href="#i-chevron"></use></svg></span></div>
+        </button>
+        <div class="report-employee-body" id="report-body-${index}">
+          <div class="report-table-wrap"><table class="report-table">
+            <thead><tr><th>วันที่</th><th>สถานะ</th><th>เข้างาน</th><th>เลิกงาน</th><th>เข้างานที่</th><th>เลิกงานที่</th><th>หมายเหตุ</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table></div>
+          <div class="report-mobile-days">${mobileRowsHtml}</div>
         </div>
-      `;
-    })
-    .join("");
+      </article>`;
+  }).join("");
 }
 
 function bindReportCardToggle() {
@@ -1083,7 +1013,8 @@ function bindReportCardToggle() {
       const index = button.dataset.reportToggle;
       const card = document.querySelector(`[data-report-card="${index}"]`);
       if (!card) return;
-      card.classList.toggle("open");
+      const isOpen = card.classList.toggle("open");
+      button.setAttribute("aria-expanded", String(isOpen));
     });
   });
 }
@@ -1742,6 +1673,23 @@ onAuthStateChanged(auth, async (user) => {
     await signOut(auth);
     window.location.replace("./index.html");
   }
+});
+
+
+document.querySelectorAll("[data-admin-go]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const view = button.dataset.adminGo;
+    if (view === "home") showSection(adminHomeSection);
+    if (view === "reports") showSection(reportsSection);
+    if (view === "approval") {
+      showSection(approvalSection);
+      await loadApprovalItems();
+    }
+    if (view === "holidays") {
+      showSection(holidaysSection);
+      await loadHolidays();
+    }
+  });
 });
 
 openReportsBtn.addEventListener("click", () => {
