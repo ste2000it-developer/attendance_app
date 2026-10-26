@@ -1,0 +1,271 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Lexend+Giga:wght@400;500;600&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: #efefef;
+  color: #111111;
+  font-family: 'Kanit', sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.page.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 24px 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  padding: 56px 32px 42px;
+}
+
+.brand-block {
+  text-align: center;
+  margin-bottom: 54px;
+}
+
+.brand-title-en {
+  margin: 0;
+  font-family: 'Lexend Giga', sans-serif;
+  font-size: 31px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.brand-title-en-sub {
+  margin: 14px 0 0;
+  font-family: 'Lexend Giga', sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.brand-subtitle {
+  margin: 28px 0 0;
+  font-size: 17px;
+  font-weight: 300;
+  color: #a8a8a8;
+  letter-spacing: 0.2px;
+}
+
+.login-form {
+  width: 100%;
+}
+
+.input-group {
+  margin-bottom: 34px;
+}
+
+.floating-group {
+  position: relative;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.text-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1.5px solid #b8b8b8;
+  outline: none;
+  background: transparent;
+  font-size: 21px;
+  font-weight: 300;
+  color: #222222;
+  padding: 18px 0 10px;
+  border-radius: 0;
+  transition: border-color 0.2s ease;
+}
+
+.text-input:focus {
+  border-bottom-color: #0b3188;
+}
+
+.text-input::placeholder {
+  color: #bdbdbd;
+  opacity: 1;
+  transition: opacity 0.18s ease;
+}
+
+.floating-group.active .text-input::placeholder {
+  opacity: 0;
+}
+
+.floating-label {
+  position: absolute;
+  left: 0;
+  top: 18px;
+  font-size: 18px;
+  font-weight: 300;
+  color: #bdbdbd;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(0);
+  transition: all 0.18s ease;
+}
+
+.floating-group.active .floating-label {
+  top: -2px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.password-wrap {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 42px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 0;
+  top: 15px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: #bdbdbd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.eye-icon.hidden {
+  display: none;
+}
+
+.login-message {
+  min-height: 28px;
+  margin: 0 0 20px;
+  font-size: 15px;
+  text-align: center;
+  color: #d12c2c;
+}
+
+.login-btn {
+  width: 100%;
+  border: none;
+  border-radius: 28px;
+  background: #0b3188;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 400;
+  padding: 22px 20px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.login-btn:active {
+  transform: translateY(1px);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.version-text {
+  margin: 52px 0 0;
+  text-align: center;
+  color: #9f9f9f;
+  font-size: 18px;
+  font-weight: 300;
+}
+
+@media (max-width: 480px) {
+  .page.login-page {
+    padding: 28px 18px 18px;
+  }
+
+  .login-card {
+    max-width: 100%;
+    border-radius: 26px;
+    padding: 54px 28px 38px;
+  }
+
+  .brand-block {
+    margin-bottom: 48px;
+  }
+
+  .brand-title-en {
+    font-size: 25px;
+  }
+
+  .brand-title-en-sub {
+    font-size: 20px;
+  }
+
+  .brand-subtitle {
+    font-size: 15px;
+    margin-top: 22px;
+  }
+
+  .input-group {
+    margin-bottom: 30px;
+  }
+
+  .text-input {
+    font-size: 20px;
+    padding: 18px 0 10px;
+  }
+
+  .floating-label {
+    font-size: 17px;
+    top: 18px;
+  }
+
+  .toggle-password-btn {
+    top: 16px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .eye-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .login-btn {
+    font-size: 22px;
+    padding: 20px 18px;
+    border-radius: 24px;
+  }
+
+  .version-text {
+    margin-top: 42px;
+    font-size: 16px;
+  }
+}
