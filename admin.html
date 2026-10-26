@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>จัดการระบบเข้างาน | Admin</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js" defer></script>
+</head>
+<body>
+<svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-5 3 2 5-7"/><path d="M16 6h3v3"/></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 15h3"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="m5 12 14 0m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 9a7 7 0 0 1 12-2l2 5M4 12l2 5a7 7 0 0 0 12-2"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-9 0 1 14h10l1-14M10 11v6m4-6v6"/></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2H3M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></symbol>
+</svg>
+<div class="admin-app">
+  <aside class="admin-sidebar" aria-label="เมนูจัดการระบบ">
+    <div class="sidebar-brand">
+      <span class="brand-mark">ST</span>
+      <div class="brand-copy"><strong>Attendance</strong><span>ADMIN WORKSPACE</span></div>
+    </div>
+    <nav class="sidebar-nav" aria-label="เมนูหลัก">
+      <button type="button" class="sidebar-link active" data-admin-go="home" aria-current="page"><svg class="ui-icon" aria-hidden="true"><use href="#i-grid"></use></svg><span>ภาพรวม</span></button>
+      <button type="button" class="sidebar-link" data-admin-go="reports" ><svg class="ui-icon" aria-hidden="true"><use href="#i-chart"></use></svg><span>รายงาน</span></button>
+      <button type="button" class="sidebar-link" data-admin-go="approval" ><svg class="ui-icon" aria-hidden="true"><use href="#i-clipboard"></use></svg><span>คำขอลา</span><span class="nav-notification" id="navPendingCount" hidden>0</span></button>
+      <button type="button" class="sidebar-link" data-admin-go="holidays" ><svg class="ui-icon" aria-hidden="true"><use href="#i-calendar"></use></svg><span>วันหยุด</span></button>
+    </nav>
+    <div class="sidebar-foot">S.TUNTIVIVAT ENGINEERING 2000<br />ระบบจัดการการเข้างาน</div>
+  </aside>
+  <div class="admin-workspace">
+    <header class="admin-header">
+      <div class="admin-heading">
+        <p class="admin-kicker">ระบบจัดการการเข้างาน</p>
+        <h1 class="admin-title" id="adminPageTitle">ภาพรวม</h1>
+        <p class="admin-subtitle" id="adminPageSubtitle">เลือกงานที่ต้องการจัดการได้จากเมนูด้านล่าง</p>
+      </div>
+      <span class="admin-role-pill">ADMIN</span>
+    </header>
+    <main class="admin-main">
+      <section id="adminHomeSection" class="admin-section active" aria-label="ภาพรวม">
+        <div class="home-welcome">
+          <div>
+            <p class="home-eyebrow">WORKSPACE</p>
+            <h2>จัดการงานบุคคลได้ในที่เดียว</h2>
+            <p>ตรวจสอบเวลาทำงาน อนุมัติวันลา และดูแลวันหยุดบริษัท</p>
+          </div>
+          <div class="home-pending" aria-label="รายการรออนุมัติ">
+            <strong id="homePendingCount">–</strong><span>คำขอรอดำเนินการ</span>
+          </div>
+        </div>
+        <h2 class="section-label">เมนูจัดการ</h2>
+        <div class="menu-grid">
+          <button id="openReportsBtn" class="menu-card" type="button">
+            <span class="menu-card-icon icon-report"><svg class="ui-icon" aria-hidden="true"><use href="#i-chart"></use></svg></span>
+            <span class="menu-card-copy"><strong class="menu-card-title">รายงานการเข้างาน</strong><span class="menu-card-text">ตรวจสอบเวลา สถานะรายวัน และส่งออก Excel</span></span>
+            <span class="menu-card-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
+          </button>
+          <button id="openApprovalBtn" class="menu-card" type="button">
+            <span class="menu-card-icon icon-leave"><svg class="ui-icon" aria-hidden="true"><use href="#i-clipboard"></use></svg></span>
+            <span class="menu-card-copy"><strong class="menu-card-title">จัดการคำขอลา</strong><span class="menu-card-text">ตรวจสอบ อนุมัติ และดูประวัติใบลา</span></span>
+            <span class="menu-card-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
+          </button>
+          <button id="openHolidaysBtn" class="menu-card" type="button">
+            <span class="menu-card-icon icon-holiday"><svg class="ui-icon" aria-hidden="true"><use href="#i-calendar"></use></svg></span>
+            <span class="menu-card-copy"><strong class="menu-card-title">วันหยุดบริษัท</strong><span class="menu-card-text">กำหนดวันหยุดที่ใช้กับรายงาน</span></span>
+            <span class="menu-card-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#i-arrow"></use></svg></span>
+          </button>
+        </div>
+      </section>
+
+      <section id="reportsSection" class="admin-section" aria-label="รายงานการเข้างาน">
+        <div class="panel-card">
+          <div class="panel-header">
+            <button id="backFromReportsBtn" class="back-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-back"></use></svg><span>ภาพรวม</span></button>
+            <div class="panel-actions">
+              <button id="loadReportBtn" class="primary-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-refresh"></use></svg><span>โหลดรายงาน</span></button>
+              <button id="exportExcelBtn" class="ghost-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-download"></use></svg><span>Export Excel</span></button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="report-toolbar">
+              <div class="report-filter-group">
+                <label for="reportMonthInput" class="report-filter-label">เดือนที่ต้องการดู</label>
+                <input id="reportMonthInput" class="report-month-input" type="month" />
+              </div>
+              <div class="report-filter-group report-search-group">
+                <label for="reportSearchInput" class="report-filter-label">ค้นหาพนักงาน</label>
+                <input id="reportSearchInput" class="report-month-input" type="search" placeholder="ชื่อ รหัส หรือแผนก" autocomplete="off" />
+              </div>
+              <p id="reportRangeText" class="report-range-text">ช่วงรายงาน: -</p>
+            </div>
+            <div id="reportLoading" class="approval-loading" role="status" aria-live="polite">เลือกเดือนแล้วกดโหลดรายงาน</div>
+            <div id="reportList" class="report-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="approvalSection" class="admin-section" aria-label="จัดการคำขอลา">
+        <div class="panel-card">
+          <div class="panel-header">
+            <button id="backFromApprovalBtn" class="back-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-back"></use></svg><span>ภาพรวม</span></button>
+            <div class="panel-actions"><button id="refreshApprovalBtn" class="ghost-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-refresh"></use></svg><span>รีเฟรช</span></button></div>
+          </div>
+          <div class="panel-body">
+            <div class="approval-summary-grid">
+              <div class="summary-card summary-pending"><span class="summary-label">รออนุมัติ</span><strong id="pendingCount" class="summary-value">0</strong></div>
+              <div class="summary-card summary-approved"><span class="summary-label">อนุมัติแล้ว</span><strong id="approvedCount" class="summary-value">0</strong></div>
+              <div class="summary-card summary-rejected"><span class="summary-label">ไม่อนุมัติ</span><strong id="rejectedCount" class="summary-value">0</strong></div>
+            </div>
+            <div class="approval-toolbar">
+              <span class="list-heading">รายการคำขอลา</span>
+              <div class="approval-select-group">
+                <label class="approval-select-label" id="approvalViewLabel">แสดงรายการ</label>
+                <div id="approvalDropdown" class="custom-dropdown">
+                  <button id="approvalDropdownBtn" class="custom-dropdown-btn" type="button" aria-label="กรองคำขอลา" aria-expanded="false" aria-controls="approvalDropdownMenu" aria-haspopup="true">
+                    <span id="approvalDropdownLabel">รออนุมัติ</span><svg class="ui-icon" aria-hidden="true"><use href="#i-chevron"></use></svg>
+                  </button>
+                  <div id="approvalDropdownMenu" class="custom-dropdown-menu hidden" role="group" aria-labelledby="approvalViewLabel">
+                    <button class="custom-dropdown-item active" type="button" data-view="pending">รออนุมัติ</button>
+                    <button class="custom-dropdown-item" type="button" data-view="all">ทั้งหมด</button>
+                    <button class="custom-dropdown-item" type="button" data-view="approved">อนุมัติแล้ว</button>
+                    <button class="custom-dropdown-item" type="button" data-view="rejected">ไม่อนุมัติ</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="approvalLoading" class="approval-loading" role="status" aria-live="polite">กำลังโหลดรายการใบลา...</div>
+            <div id="approvalList" class="approval-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="holidaysSection" class="admin-section" aria-label="วันหยุดบริษัท">
+        <div class="panel-card">
+          <div class="panel-header">
+            <button id="backFromHolidaysBtn" class="back-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-back"></use></svg><span>ภาพรวม</span></button>
+            <div class="panel-actions"><button id="refreshHolidaysBtn" class="ghost-btn" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-refresh"></use></svg><span>รีเฟรช</span></button></div>
+          </div>
+          <div class="panel-body">
+            <form id="holidayForm" class="holiday-form">
+              <h2 class="list-heading">เพิ่มวันหยุดบริษัท</h2>
+              <div class="holiday-form-grid">
+                <div class="holiday-form-group"><label for="holidayNameInput" class="holiday-label">ชื่อวันหยุด</label><input id="holidayNameInput" class="holiday-input" type="text" placeholder="เช่น วันหยุดชดเชย" autocomplete="off" required /></div>
+                <div class="holiday-form-group"><label for="holidayDateInput" class="holiday-label">วันที่</label><input id="holidayDateInput" class="holiday-input" type="date" required /></div>
+                <button id="saveHolidayBtn" class="holiday-save-btn" type="submit"><svg class="ui-icon" aria-hidden="true"><use href="#i-plus"></use></svg><span>เพิ่มวันหยุด</span></button>
+              </div>
+            </form>
+            <div class="holiday-list-heading"><h2 class="list-heading">รายการวันหยุด</h2><span>เรียงตามวันที่</span></div>
+            <div id="holidayLoading" class="approval-loading" role="status" aria-live="polite">กำลังโหลดวันหยุด...</div>
+            <div id="holidayList" class="holiday-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div id="adminPopupOverlay" class="admin-popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="adminPopupTitle" aria-describedby="adminPopupMessage">
+  <div class="admin-popup-card">
+    <span class="popup-emblem"><svg class="ui-icon" aria-hidden="true"><use href="#i-clipboard"></use></svg></span>
+    <p id="adminPopupTitle" class="admin-popup-title">ยืนยันรายการ</p>
+    <p id="adminPopupMessage" class="admin-popup-message">ข้อความ</p>
+    <div class="admin-popup-actions">
+      <button id="adminPopupCancelBtn" class="admin-popup-btn admin-popup-btn-secondary" type="button">ยกเลิก</button>
+      <button id="adminPopupConfirmBtn" class="admin-popup-btn admin-popup-btn-primary" type="button">ตกลง</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="./admin.js"></script>
+</body>
+</html>

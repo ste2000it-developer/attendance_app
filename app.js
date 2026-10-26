@@ -100,11 +100,9 @@ onAuthStateChanged(auth, async (user) => {
     const userData = userDoc.data();
     const role = userData.role || "";
 
-    // Preserve account separation while the management workspace is being rebuilt.
+    // ✅ ADMIN = ข้าม device lock
     if (role === "admin") {
-      await signOut(auth);
-      showError("ระบบสำหรับบัญชีนี้อยู่ระหว่างปรับปรุง");
-      document.body.style.display = "block";
+      window.location.replace("./admin.html");
       return;
     }
 
